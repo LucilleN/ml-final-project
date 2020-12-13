@@ -28,11 +28,15 @@ Building fully convolutional neural networks in PyTorch.
 9. https://medium.com/pytorch/accelerate-your-hyperparameter-optimization-with-pytorchs-ecosystem-tools-bc17001b9a49
 10. https://pytorch.org/tutorials/intermediate/torchvision_tutorial.html
 11. https://medium.com/analytics-vidhya/creating-a-very-simple-u-net-model-with-pytorch-for-semantic-segmentation-of-satellite-images-223aa216e705
+12. https://github.com/pochih/FCN-pytorch/blob/master/python/fcn.py
+13. https://github.com/wkentaro/pytorch-fcn/blob/master/torchfcn/models/fcn8s.py
+14. https://www.pyimagesearch.com/2016/11/07/intersection-over-union-iou-for-object-detection/
+15. https://github.com/amdegroot/ssd.pytorch/blob/master/layers/box_utils.py#L48
 
 # Notes
 1. CONV2D
     a. https://pytorch.org/docs/stable/generated/torch.nn.Conv2d.html
-    b.
+    b. https://www.programcreek.com/python/example/107691/torch.nn.Conv2d
 2. Max_Pool
     a. https://pytorch.org/docs/stable/generated/torch.nn.Conv2d.html
     b.
