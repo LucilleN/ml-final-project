@@ -61,6 +61,7 @@ class FullyConvolutionalNetwork(torch.nn.Module):
         # status: done
 
         # (3) average pool layers
+        # https://www.aiworkbox.com/lessons/avgpool2d-how-to-incorporate-average-pooling-into-a-pytorch-neural-network
         # https://pytorch.org/docs/stable/nn.functional.html#torch.nn.functional.avg_pool2d
         # status: TODO
 
@@ -118,6 +119,7 @@ class FullyConvolutionalNetwork(torch.nn.Module):
         self.relu5_3 = nn.ReLU(inplace=True)
         self.pool5 = nn.MaxPool2d(2, stride=2, ceil_mode=True)  # 1/32
 
+        # TODO: avgpool2d layer
         # fc6
         self.fc6 = nn.Conv2d(512, 4096, 7)
         self.relu6 = nn.ReLU(inplace=True)
@@ -306,24 +308,42 @@ def evaluate(net, dataloader):
 
         Please add any necessary arguments
     '''
-
+    correct = 0
+    sample = 0
     # Make sure we do not backpropagate
     with torch.no_grad():
 
-        for _ in dataloader:
+        for (images, labels) in dataloader:
 
             # TODO: Forward through the network
 
             # TODO: Compute evaluation metric(s) for each sample
 
-            pass
+            # TODO: Vectorize images from (N, H, W, C) to (N, d)
+            shape = images.shape
+            n_dim = np.prod(shape[1:])
+            images = images.view(-1, n_dim)
+
+            # TODO: Forward through the network
+            outputs = net(images)
+
+            # TODO: Take the argmax over the outputs
+            _, predictions = torch.max(outputs, dim=1)
+
+            # Accumulate number of samples
+            sample = sample + labels.shape[0]
+
+            # TODO: Check if our prediction is correct
+            correct = correct + torch.sum(predictions == labels).item()
 
     # TODO: Compute mean evaluation metric(s)
-
+    mean_accuracy = 100.0 * correct/sample
     # TODO: Print scores
-
+    print('Mean accuracy over %d images: %d %%' % (sample, mean_accuracy))
     # TODO: Convert the last batch of images back to original shape
-
+    images = images.view(shape[0], shape[1], shape[2], shape[3])
+    images = images.cpu().numpy()
+    images = np.transpose(images, (0, 2, 3, 1))
     # TODO: Convert the last batch of predictions to the original image shape
 
     # TODO: Plot images
@@ -420,11 +440,19 @@ if __name__ == '__main__':
     ])
 
     # Download and setup your training set
-    dataset_train = torchvision.datasets.Cityscapes(
+
+    dataset_train = torchvision.datasets.VOCSegmentation(
         root='./data',
-        train=True,
+        year= '2012',
+        image_set= 'train',
         download=True,
         transform=data_preprocess_transform)
+
+    # dataset_train = torchvision.datasets.Cityscapes(
+    #     root='./data',
+    #     train=True,
+    #     download=True,
+    #     transform=data_preprocess_transform)
 
     # Setup a dataloader (iterator) to fetch from the training set
     dataloader_train = torch.utils.data.DataLoader(
@@ -434,11 +462,19 @@ if __name__ == '__main__':
         num_workers=2)
 
     # Download and setup your validation/testing set
-    dataset_test =  torchvision.datasets.Cityscapes(
+
+    dataset_test =  torchvision.datasets.VOCSegmentation(
         root='./data',
-        train=False,
+        year= '2012',
+        image_set= 'val',
         download=True,
         transform=data_preprocess_transform)
+
+    # dataset_test =  torchvision.datasets.Cityscapes(
+    #     root='./data',
+    #     train=False,
+    #     download=True,
+    #     transform=data_preprocess_transform)
 
     # TODO: Setup a dataloader (iterator) to fetch from the validation/testing set
     dataloader_test = torch.utils.data.DataLoader(
@@ -448,20 +484,19 @@ if __name__ == '__main__':
         num_workers=2)
 
     # TODO: Define network
-    net = None
 
-    # net = NeuralNetwork(
-    #     n_input_feature=n_input_feature,
-    #     n_output=n_class)
+    net = NeuralNetwork(
+        n_input_feature=n_input_feature,
+        n_output=n_class)
 
     # TODO: Setup learning rate optimizer
     # https://pytorch.org/docs/stable/optim.html?#torch.optim.SGD
 
-    # optimizer = torch.optim.SGD(
-    #     net.parameters(),
-    #     lr=args.learning_rate,
-    #     weight_decay=args.lambda_weight_decay,
-    #     momentum=args.momentum)
+    optimizer = torch.optim.SGD(
+        net.parameters(),
+        lr=args.learning_rate,
+        weight_decay=args.lambda_weight_decay,
+        momentum=args.momentum)
 
     if args.train_network:
         # Set network to training mode
@@ -469,13 +504,13 @@ if __name__ == '__main__':
 
         # TODO: Train network and save into checkpoint
 
-        # net = train(
-        #     net=net,
-        #     dataloader=dataloader_train,
-        #     n_epoch=args.n_epoch,
-        #     optimizer=optimizer,
-        #     learning_rate_decay=args.learning_rate_decay,
-        #     learning_rate_decay_period=args.learning_rate_decay_period)
+        net = train(
+            net=net,
+            dataloader=dataloader_train,
+            n_epoch=args.n_epoch,
+            optimizer=optimizer,
+            learning_rate_decay=args.learning_rate_decay,
+            learning_rate_decay_period=args.learning_rate_decay_period)
         # torch.save({ 'state_dict' : net.state_dict()}, './checkpoint.pth')
 
         # Saves weight to checkpoint

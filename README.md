@@ -32,6 +32,7 @@ Building fully convolutional neural networks in PyTorch.
 13. https://github.com/wkentaro/pytorch-fcn/blob/master/torchfcn/models/fcn8s.py
 14. https://www.pyimagesearch.com/2016/11/07/intersection-over-union-iou-for-object-detection/
 15. https://github.com/amdegroot/ssd.pytorch/blob/master/layers/box_utils.py#L48
+16. https://github.com/omerbsezer/Fast-Pytorch/blob/master/README.md
 
 # Notes
 1. CONV2D
