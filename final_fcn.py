@@ -119,16 +119,35 @@ class FullyConvolutionalNetwork(torch.nn.Module):
         self.relu5_3 = nn.ReLU(inplace=True)
         self.pool5 = nn.MaxPool2d(2, stride=2, ceil_mode=True)  # 1/32
 
-        # TODO: avgpool2d layer
-        # fc6
-        self.fc6 = nn.Conv2d(512, 4096, 7)
-        self.relu6 = nn.ReLU(inplace=True)
-        self.drop6 = nn.Dropout2d()
+        # TODO: avgpool2d layers
+        # avgP6
+        self.conv6_1 = nn.Conv2d(512, 512, 3, padding=1)
+        self.relu6_1 = nn.ReLU(inplace=True)
+        self.conv6_2 = nn.Conv2d(512, 512, 3, padding=1)
+        self.relu6_2 = nn.ReLU(inplace=True)
+        self.conv6_3 = nn.Conv2d(512, 512, 3, padding=1)
+        self.relu6_3 = nn.ReLU(inplace=True)
+        self.pool6 = nn.AvgPool2d(2, stride=2, ceil_mode=True)  # 1/32
 
-        # fc7
-        self.fc7 = nn.Conv2d(4096, 4096, 1)
-        self.relu7 = nn.ReLU(inplace=True)
-        self.drop7 = nn.Dropout2d()
+        # avgP7
+        self.conv7_1 = nn.Conv2d(512, 512, 3, padding=1)
+        self.relu7_1 = nn.ReLU(inplace=True)
+        self.conv7_2 = nn.Conv2d(512, 512, 3, padding=1)
+        self.relu7_2 = nn.ReLU(inplace=True)
+        self.conv7_3 = nn.Conv2d(512, 512, 3, padding=1)
+        self.relu7_3 = nn.ReLU(inplace=True)
+        self.pool7 = nn.AvgPool2d(2, stride=2, ceil_mode=True)  # 1/32
+
+        # fully connect layers
+        # fc8
+        self.fc8 = nn.Conv2d(512, 4096, 7)
+        self.relu8 = nn.ReLU(inplace=True)
+        self.drop8 = nn.Dropout2d()
+
+        # fc9
+        self.fc9 = nn.Conv2d(4096, 4096, 1)
+        self.relu9 = nn.ReLU(inplace=True)
+        self.drop9 = nn.Dropout2d()
 
         self.score_fr = nn.Conv2d(4096, n_class, 1)
         self.score_pool3 = nn.Conv2d(256, n_class, 1)
@@ -184,11 +203,23 @@ class FullyConvolutionalNetwork(torch.nn.Module):
         h = self.relu5_3(self.conv5_3(h))
         h = self.pool5(h)
 
-        h = self.relu6(self.fc6(h))
-        h = self.drop6(h)
+        # average pool
+        h = self.relu6_1(self.conv6_1(h))
+        h = self.relu6_2(self.conv6_2(h))
+        h = self.relu6_3(self.conv6_3(h))
+        h = self.pool6(h)
 
-        h = self.relu7(self.fc7(h))
-        h = self.drop7(h)
+        h = self.relu7_1(self.conv7_1(h))
+        h = self.relu7_2(self.conv7_2(h))
+        h = self.relu7_3(self.conv7_3(h))
+        h = self.pool7(h)
+
+        # fully connected 
+        h = self.relu8(self.fc8(h))
+        h = self.drop8(h)
+
+        h = self.relu9(self.fc9(h))
+        h = self.drop9(h)
 
         h = self.score_fr(h)
         h = self.upscore2(h)
