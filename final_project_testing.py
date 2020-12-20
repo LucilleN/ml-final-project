@@ -41,13 +41,6 @@ parser.add_argument('--lambda_weight_decay',
 
 args = parser.parse_args()
 
-class Convert(object):
-    def __call__(self, img):
-        return torch.unsqueeze(torch.from_numpy(np.array(img)), 0).float()
-
-class Flatten(object):
-    def __call__(self, img):
-        return img.view(32*32*3)
 
 class FullyConvolutionalNetwork(torch.nn.Module):
     '''
@@ -147,6 +140,7 @@ def train(net,
             # TODO: Vectorize images from (N, H, W, C) to (N, d)
             n_dim = np.prod(images.shape[1:])
             images = images.view(-1, n_dim)
+            # labels = labels.view(-1, n_dim)
 
             # TODO: Forward through the network
             outputs = net(images)
@@ -155,6 +149,9 @@ def train(net,
             optimizer.zero_grad()
 
             # TODO: Compute loss function
+            print("about to compute loss")
+            print("output shape:", outputs.shape)
+            print("labels shape:", labels.shape)
             loss = loss_func(outputs, labels)
 
             # TODO: Update parameters by backpropagation
@@ -276,8 +273,6 @@ if __name__ == '__main__':
     # https://pytorch.org/docs/stable/torchvision/transforms.html
     data_preprocess_transform = torchvision.transforms.Compose([
         torchvision.transforms.Resize((32,32)),
-        # Convert(),
-        # Flatten(),
         torchvision.transforms.ToTensor()
     ])
 
@@ -337,15 +332,15 @@ if __name__ == '__main__':
     ]
 
     # Number of input features: 3 (channel) by 32 (height) by 32 (width)
-    n_input_feature = 3 * 32 * 32
+    image_dimensions = 3 * 32 * 32
 
     # VOC 2012 dataset has 20 classes
-    n_class = 20
+    # n_class = 20
 
     # TODO: Define network
     net = FullyConvolutionalNetwork(
-        n_input_feature=n_input_feature,
-        n_output=n_class)
+        n_input_feature=image_dimensions,
+        n_output=image_dimensions)
 
     # TODO: Setup learning rate optimizer
     # https://pytorch.org/docs/stable/optim.html?#torch.optim.SGD
