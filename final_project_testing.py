@@ -50,7 +50,7 @@ class FullyConvolutionalNetwork(torch.nn.Module):
         Please add any necessary arguments
     '''
 
-    def __init__(self, n_input_feature, n_output):
+    def __init__(self, n_class):
         super(FullyConvolutionalNetwork, self).__init__()
 
         # TODO: Design your neural network using
@@ -66,9 +66,63 @@ class FullyConvolutionalNetwork(torch.nn.Module):
         # (4) transposed convolutional layers
         # https://pytorch.org/docs/stable/generated/torch.nn.ConvTranspose2d.html
         
-        # just using basic fc nn from exercise 10 as baseline
-        self.fully_connected1 = torch.nn.Linear(n_input_feature, 2)
-        self.output = torch.nn.Linear(2, n_output)
+        self.activation_function = nn.ReLU(inplace=True)
+        self.kernel_size = 3
+
+        """
+        Encoding
+        """
+
+        # Convolutional 1
+        self.conv1_1 = nn.Conv2d(in_channels=3, out_channels=64, kernel_size=self.kernel_size, padding=1, output_padding=1)
+        self.conv1_2 = nn.Conv2d(in_channels=64, out_channels=64, kernel_size=self.kernel_size, padding=1, output_padding=1)
+        
+        # Pooling 1
+        self.pool1 = nn.MaxPool2d(kernel_size=2, stride=2)  
+
+        # Convolutional 2
+        self.conv2_1 = nn.Conv2d(in_channels=64, out_channels=128, kernel_size=self.kernel_size, padding=1)
+        self.conv2_2 = nn.Conv2d(in_channels=128, out_channels=128, kernel_size=self.kernel_size, padding=1)
+        
+        # Pooling 2
+        self.pool2 = nn.MaxPool2d(kernel_size=2, stride=2) 
+
+        # Convolutional 3
+        self.conv3_1 = nn.Conv2d(in_channels=128, out_channels=128, kernel_size=self.kernel_size, padding=1)
+        self.conv3_2 = nn.Conv2d(in_channels=128, out_channels=128, kernel_size=self.kernel_size, padding=1)
+        
+        # Pooling 3
+        self.pool3 = nn.MaxPool2d(kernel_size=2, stride=2) 
+
+        """
+        Latent Vector
+        """
+
+        # Convolutional 4
+        self.conv4_1 = nn.Conv2d(in_channels=128, out_channels=128, kernel_size=self.kernel_size, padding=1)
+        self.conv4_2 = nn.Conv2d(in_channels=128, out_channels=128, kernel_size=self.kernel_size, padding=1)
+
+        """
+        Decoding
+        """
+
+        # Upsampling / Transpose Convolutional 1
+        self.transposed_conv1 = nn.ConvTranspose2d(in_channels=512, out_channels=1024, kernel_size=self.kernel_size)
+
+        # Convolutional 5
+        self.conv5_1 = nn.Conv2d(in_channels=128, out_channels=128, kernel_size=self.kernel_size, padding=1)
+        self.conv5_2 = nn.Conv2d(in_channels=128, out_channels=128, kernel_size=self.kernel_size, padding=1)
+        
+        # Upsampling / Transpose Convolutional 2
+        self.transposed_conv2 = nn.ConvTranspose2d(in_channels=512, out_channels=1024, kernel_size=self.kernel_size)
+
+        # Convolutional 6
+        self.conv6_1 = nn.Conv2d(in_channels=128, out_channels=128, kernel_size=self.kernel_size, padding=1)
+        self.conv6_2 = nn.Conv2d(in_channels=128, out_channels=128, kernel_size=self.kernel_size, padding=1)
+        
+        # Upsampling / Transpose Convolutional 3
+        self.transposed_conv3 = nn.ConvTranspose2d(in_channels=512, out_channels=n_class, kernel_size=self.kernel_size)
+
 
     def forward(self, x):
         '''
