@@ -123,6 +123,9 @@ class FullyConvolutionalNetwork(torch.nn.Module):
         # Upsampling / Transpose Convolutional 3
         self.transposed_conv3 = nn.ConvTranspose2d(in_channels=512, out_channels=n_class, kernel_size=self.kernel_size)
 
+        # Convolutional 7
+        self.conv6_1 = nn.Conv2d(in_channels=128, out_channels=128, kernel_size=self.kernel_size, padding=1)
+        self.conv6_2 = nn.Conv2d(in_channels=128, out_channels=128, kernel_size=self.kernel_size, padding=1)
 
     def forward(self, x):
         '''
@@ -137,10 +140,60 @@ class FullyConvolutionalNetwork(torch.nn.Module):
 
         # TODO: Implement forward function
         # return x
-        x1 = self.fully_connected1(x)
-        theta_x1 = torch.nn.functional.relu(x1)
-        output = self.output(theta_x1)
-        return output
+        h = x
+        
+        """
+        Encoding
+        """
+
+        # Convolutional 1
+        h = self.activation_function(self.conv1_1(h))
+        h = self.activation_function(self.conv1_2(h))
+        # Pooling 1
+        h = self.pool1(h)
+
+        # Convolutional 2
+        h = self.activation_function(self.conv2_1(h))
+        h = self.activation_function(self.conv2_2(h))
+        # Pooling 2
+        h = self.pool2(h)
+
+        # Convolutional 3
+        h = self.activation_function(self.conv3_1(h))
+        h = self.activation_function(self.conv3_2(h))
+        # Pooling 3
+        h = self.pool3(h)
+
+        """
+        Latent Vector
+        """
+
+        # Convolutional 4
+        h = self.activation_function(self.conv4_1(h))
+        h = self.activation_function(self.conv4_2(h))
+
+        """
+        Decoding
+        """
+
+        # Upsampling / Transpose Convolutional 1
+        h = self.transposed_conv1(h)
+        # Convolutional 5
+        h = self.activation_function(self.conv5_1(h))
+        h = self.activation_function(self.conv5_2(h))
+
+        # Upsampling / Transpose Convolutional 2
+        h = self.transposed_conv2(h)
+        # Convolutional 6
+        h = self.activation_function(self.conv6_1(h))
+        h = self.activation_function(self.conv6_2(h))
+
+        # Upsampling / Transpose Convolutional 3
+        h = self.transposed_conv3(h)
+        # Convolutional 7
+        h = self.activation_function(self.conv7_1(h))
+        h = self.activation_function(self.conv7_2(h))
+
 
 def train(net,
           dataloader,
