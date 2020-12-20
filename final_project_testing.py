@@ -124,8 +124,9 @@ class FullyConvolutionalNetwork(torch.nn.Module):
         self.transposed_conv3 = nn.ConvTranspose2d(in_channels=512, out_channels=n_class, kernel_size=self.kernel_size)
 
         # Convolutional 7
-        self.conv6_1 = nn.Conv2d(in_channels=128, out_channels=128, kernel_size=self.kernel_size, padding=1)
-        self.conv6_2 = nn.Conv2d(in_channels=128, out_channels=128, kernel_size=self.kernel_size, padding=1)
+        self.conv7_1 = nn.Conv2d(in_channels=128, out_channels=128, kernel_size=self.kernel_size, padding=1)
+        self.conv7_2 = nn.Conv2d(in_channels=128, out_channels=128, kernel_size=self.kernel_size, padding=1)
+
 
     def forward(self, x):
         '''
@@ -138,8 +139,6 @@ class FullyConvolutionalNetwork(torch.nn.Module):
                     tensor of n_output
         '''
 
-        # TODO: Implement forward function
-        # return x
         h = x
         
         """
