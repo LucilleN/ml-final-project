@@ -12,6 +12,7 @@ TODO: Report what each member did in this project
 '''
 import argparse
 import torch, torchvision
+import torch.nn as nn
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -42,7 +43,7 @@ parser.add_argument('--lambda_weight_decay',
 args = parser.parse_args()
 
 
-class FullyConvolutionalNetwork(torch.nn.Module):
+class FullyConvolutionalNetwork(nn.Module):
     '''
     Fully convolutional network
 
@@ -74,8 +75,8 @@ class FullyConvolutionalNetwork(torch.nn.Module):
         """
 
         # Convolutional 1
-        self.conv1_1 = nn.Conv2d(in_channels=3, out_channels=64, kernel_size=self.kernel_size, padding=1, output_padding=1)
-        self.conv1_2 = nn.Conv2d(in_channels=64, out_channels=64, kernel_size=self.kernel_size, padding=1, output_padding=1)
+        self.conv1_1 = nn.Conv2d(in_channels=3, out_channels=64, kernel_size=self.kernel_size, padding=1)
+        self.conv1_2 = nn.Conv2d(in_channels=64, out_channels=64, kernel_size=self.kernel_size, padding=1)
         
         # Pooling 1
         self.pool1 = nn.MaxPool2d(kernel_size=2, stride=2)  
@@ -107,25 +108,25 @@ class FullyConvolutionalNetwork(torch.nn.Module):
         """
 
         # Upsampling / Transpose Convolutional 1
-        self.transposed_conv1 = nn.ConvTranspose2d(in_channels=512, out_channels=1024, kernel_size=self.kernel_size)
+        self.transposed_conv1 = nn.ConvTranspose2d(in_channels=128, out_channels=128, kernel_size=self.kernel_size)
 
         # Convolutional 5
         self.conv5_1 = nn.Conv2d(in_channels=128, out_channels=128, kernel_size=self.kernel_size, padding=1)
         self.conv5_2 = nn.Conv2d(in_channels=128, out_channels=128, kernel_size=self.kernel_size, padding=1)
         
         # Upsampling / Transpose Convolutional 2
-        self.transposed_conv2 = nn.ConvTranspose2d(in_channels=512, out_channels=1024, kernel_size=self.kernel_size)
+        self.transposed_conv2 = nn.ConvTranspose2d(in_channels=128, out_channels=128, kernel_size=self.kernel_size)
 
         # Convolutional 6
         self.conv6_1 = nn.Conv2d(in_channels=128, out_channels=128, kernel_size=self.kernel_size, padding=1)
         self.conv6_2 = nn.Conv2d(in_channels=128, out_channels=128, kernel_size=self.kernel_size, padding=1)
         
         # Upsampling / Transpose Convolutional 3
-        self.transposed_conv3 = nn.ConvTranspose2d(in_channels=512, out_channels=n_class, kernel_size=self.kernel_size)
+        self.transposed_conv3 = nn.ConvTranspose2d(in_channels=128, out_channels=128, kernel_size=self.kernel_size)
 
         # Convolutional 7
         self.conv7_1 = nn.Conv2d(in_channels=128, out_channels=128, kernel_size=self.kernel_size, padding=1)
-        self.conv7_2 = nn.Conv2d(in_channels=128, out_channels=128, kernel_size=self.kernel_size, padding=1)
+        self.conv7_2 = nn.Conv2d(in_channels=128, out_channels=n_class, kernel_size=self.kernel_size, padding=1)
 
 
     def forward(self, x):
@@ -245,13 +246,13 @@ def train(net,
 
             # TODO: Vectorize images from (N, H, W, C) to (N, d)
             print("images.shape originally is", images.shape)
-            n_dim = np.prod(images.shape[1:])
-            images = images.view(-1, n_dim)
-            print("images.shape changed to", images.shape)
+            # n_dim = np.prod(images.shape[1:])
+            # images = images.view(-1, n_dim)
+            # print("images.shape changed to", images.shape)
             print("labels.shape originally is", labels.shape)
-            n_label_dim = np.prod(labels.shape[1:])
-            labels = labels.view(-1, n_label_dim)
-            print("labels.shape changed to", labels.shape)
+            # n_label_dim = np.prod(labels.shape[1:])
+            # labels = labels.view(-1, n_label_dim)
+            # print("labels.shape changed to", labels.shape)
 
             # TODO: Forward through the network
             outputs = net(images)
@@ -261,8 +262,8 @@ def train(net,
 
             # TODO: Compute loss function
             print("about to compute loss")
-            outputs = torch.flatten(outputs)
-            labels = torch.flatten(labels)
+            # outputs = torch.flatten(outputs)
+            # labels = torch.flatten(labels)
             print("output shape:", outputs.shape)
             print("labels shape:", labels.shape)
             loss = loss_func(outputs, labels)
@@ -449,12 +450,12 @@ if __name__ == '__main__':
     num_features = num_pixels * 3
 
     # VOC 2012 dataset has 20 classes
-    # n_class = 20
+    n_class = 20
 
     # TODO: Define network
     net = FullyConvolutionalNetwork(
-        n_input_feature=num_features,
-        n_output=num_pixels)
+        # n_input_feature=num_features,
+        n_class=n_class)
 
     # TODO: Setup learning rate optimizer
     # https://pytorch.org/docs/stable/optim.html?#torch.optim.SGD
