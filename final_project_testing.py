@@ -41,6 +41,13 @@ parser.add_argument('--lambda_weight_decay',
 
 args = parser.parse_args()
 
+class Convert(object):
+    def __call__(self, img):
+        return torch.unsqueeze(torch.from_numpy(np.array(img)), 0).float()
+
+class Flatten(object):
+    def __call__(self, img):
+        return img.view(32*32*3)
 
 class FullyConvolutionalNetwork(torch.nn.Module):
     '''
@@ -268,7 +275,10 @@ if __name__ == '__main__':
     # TODO: Set up data preprocessing step
     # https://pytorch.org/docs/stable/torchvision/transforms.html
     data_preprocess_transform = torchvision.transforms.Compose([
-        torchvision.transforms.ToTensor(),
+        torchvision.transforms.Resize((32,32)),
+        # Convert(),
+        # Flatten(),
+        torchvision.transforms.ToTensor()
     ])
 
     # Download and setup your training set
@@ -277,7 +287,8 @@ if __name__ == '__main__':
         year= '2012',
         image_set= 'train',
         download=True,
-        transform=data_preprocess_transform)
+        transform=data_preprocess_transform,
+        target_transform=data_preprocess_transform)
 
     # Setup a dataloader (iterator) to fetch from the training set
     dataloader_train = torch.utils.data.DataLoader(
@@ -286,22 +297,22 @@ if __name__ == '__main__':
         shuffle=True,
         num_workers=2)
 
-    # Download and setup your validation/testing set
-    dataset_test = torchvision.datasets.VOCSegmentation(
-        root='./data',
-        year= '2012',
-        image_set= 'val',
-        download=True,
-        transform=data_preprocess_transform)
+    # # Download and setup your validation/testing set
+    # dataset_test = torchvision.datasets.VOCSegmentation(
+    #     root='./data',
+    #     year= '2012',
+    #     image_set= 'val',
+    #     download=True,
+    #     transform=data_preprocess_transform)
 
-    # TODO: Setup a dataloader (iterator) to fetch from the validation/testing set
-    dataloader_test = torch.utils.data.DataLoader(
-        dataset_test,
-        batch_size=args.batch_size,
-        shuffle=False,
-        num_workers=2)
+    # # TODO: Setup a dataloader (iterator) to fetch from the validation/testing set
+    # dataloader_test = torch.utils.data.DataLoader(
+    #     dataset_test,
+    #     batch_size=args.batch_size,
+    #     shuffle=False,
+    #     num_workers=2)
 
-    # Define the possible classes in CIFAR10
+    # Define the possible classes in VOC 2012 dataset
     classes = [
         'person',
         'bird', 
@@ -328,7 +339,7 @@ if __name__ == '__main__':
     # Number of input features: 3 (channel) by 32 (height) by 32 (width)
     n_input_feature = 3 * 32 * 32
 
-    # VOC 2012 dataset has 10 classes
+    # VOC 2012 dataset has 20 classes
     n_class = 20
 
     # TODO: Define network
@@ -366,8 +377,8 @@ if __name__ == '__main__':
     # Set network to evaluation mode
     net.eval()
 
-    # TODO: Evaluate network on testing set
-    evaluate(
-        net=net,
-        dataloader=dataloader_test,
-        classes=classes)
+    # # TODO: Evaluate network on testing set
+    # evaluate(
+    #     net=net,
+    #     dataloader=dataloader_test,
+    #     classes=classes)
