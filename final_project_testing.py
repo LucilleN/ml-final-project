@@ -138,9 +138,14 @@ def train(net,
         for batch, (images, labels) in enumerate(dataloader):
 
             # TODO: Vectorize images from (N, H, W, C) to (N, d)
+            print("images.shape originally is", images.shape)
             n_dim = np.prod(images.shape[1:])
             images = images.view(-1, n_dim)
-            # labels = labels.view(-1, n_dim)
+            print("images.shape changed to", images.shape)
+            print("labels.shape originally is", labels.shape)
+            n_label_dim = np.prod(labels.shape[1:])
+            labels = labels.view(-1, n_label_dim)
+            print("labels.shape changed to", labels.shape)
 
             # TODO: Forward through the network
             outputs = net(images)
@@ -150,6 +155,8 @@ def train(net,
 
             # TODO: Compute loss function
             print("about to compute loss")
+            outputs = torch.flatten(outputs)
+            labels = torch.flatten(labels)
             print("output shape:", outputs.shape)
             print("labels shape:", labels.shape)
             loss = loss_func(outputs, labels)
@@ -332,15 +339,16 @@ if __name__ == '__main__':
     ]
 
     # Number of input features: 3 (channel) by 32 (height) by 32 (width)
-    image_dimensions = 3 * 32 * 32
+    num_pixels = 32 * 32
+    num_features = num_pixels * 3
 
     # VOC 2012 dataset has 20 classes
     # n_class = 20
 
     # TODO: Define network
     net = FullyConvolutionalNetwork(
-        n_input_feature=image_dimensions,
-        n_output=image_dimensions)
+        n_input_feature=num_features,
+        n_output=num_pixels)
 
     # TODO: Setup learning rate optimizer
     # https://pytorch.org/docs/stable/optim.html?#torch.optim.SGD
