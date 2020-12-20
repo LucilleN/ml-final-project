@@ -50,7 +50,7 @@ class FullyConvolutionalNetwork(torch.nn.Module):
         Please add any necessary arguments
     '''
 
-    def __init__(self):
+    def __init__(self, n_input_feature, n_output):
         super(FullyConvolutionalNetwork, self).__init__()
 
         # TODO: Design your neural network using
@@ -65,6 +65,10 @@ class FullyConvolutionalNetwork(torch.nn.Module):
 
         # (4) transposed convolutional layers
         # https://pytorch.org/docs/stable/generated/torch.nn.ConvTranspose2d.html
+        
+        # just using basic fc nn from exercise 10 as baseline
+        self.fully_connected1 = torch.nn.Linear(n_input_feature, 2)
+        self.output = torch.nn.Linear(2, n_output)
 
     def forward(self, x):
         '''
@@ -78,7 +82,11 @@ class FullyConvolutionalNetwork(torch.nn.Module):
         '''
 
         # TODO: Implement forward function
-       return x
+        # return x
+        x1 = self.fully_connected1(x)
+        theta_x1 = torch.nn.functional.relu(x1)
+        output = self.output(theta_x1)
+        return output
 
 def train(net,
           dataloader,
@@ -111,8 +119,9 @@ def train(net,
         torch.nn.Module : trained network
     '''
 
-    # TODO: Define loss function
-    loss_func = None
+    # TODO: Define cross entropy loss
+    # https://pytorch.org/docs/stable/generated/torch.nn.CrossEntropyLoss.html
+    loss_func = torch.nn.CrossEntropyLoss()
 
     for epoch in range(n_epoch):
 
@@ -121,20 +130,32 @@ def train(net,
 
         # TODO: Decrease learning rate when learning rate decay period is met
         # e.g. decrease learning rate by a factor of decay rate every 2 epoch
+        if epoch and epoch % learning_rate_decay_period == 0:
 
-        for batch, _ in enumerate(dataloader):
+            for param_group in optimizer.param_groups:
+                param_group['lr'] = learning_rate_decay * param_group['lr']
+
+        for batch, (images, labels) in enumerate(dataloader):
+
+            # TODO: Vectorize images from (N, H, W, C) to (N, d)
+            n_dim = np.prod(images.shape[1:])
+            images = images.view(-1, n_dim)
 
             # TODO: Forward through the network
+            outputs = net(images)
 
             # TODO: Clear gradients so we don't accumlate them from previous batches
+            optimizer.zero_grad()
 
             # TODO: Compute loss function
+            loss = loss_func(outputs, labels)
 
             # TODO: Update parameters by backpropagation
+            loss.backward()
+            optimizer.step()
 
             # TODO: Accumulate total loss for the epoch
-
-            pass
+            total_loss = total_loss + loss.item()
 
         mean_loss = total_loss / float(batch)
 
@@ -182,9 +203,9 @@ def evaluate(net, dataloader):
 
     # TODO: Compute mean evaluation metric(s)
     mean_accuracy = 100.0 * n_correct / n_sample
-    IOU = intersection_over_union(predictions, images)
+    # IOU = intersection_over_union(predictions, images)
     # TODO: Print scores
-    print('Jaccard Index over %d images: %d %%' % (n_sample, IOU))
+    # print('Jaccard Index over %d images: %d %%' % (n_sample, IOU))
     print('Mean accuracy over %d images: %d %%' % (n_sample, mean_accuracy))
     # TODO: Convert the last batch of images back to original shape
     images = images.view(shape[0], shape[1], shape[2], shape[3])
@@ -280,8 +301,40 @@ if __name__ == '__main__':
         shuffle=False,
         num_workers=2)
 
+    # Define the possible classes in CIFAR10
+    classes = [
+        'person',
+        'bird', 
+        'cat', 
+        'cow', 
+        'dog', 
+        'horse', 
+        'sheep', 
+        'aeroplane', 
+        'bicycle', 
+        'boat', 
+        'bus', 
+        'car',
+        'motorbike',
+        'train', 
+        'bottle', 
+        'chair', 
+        'dining table', 
+        'potted plant', 
+        'sofa', 
+        'tv/monitor'
+    ]
+
+    # Number of input features: 3 (channel) by 32 (height) by 32 (width)
+    n_input_feature = 3 * 32 * 32
+
+    # VOC 2012 dataset has 10 classes
+    n_class = 20
+
     # TODO: Define network
-    net = FullyConvolutionalNetwork()
+    net = FullyConvolutionalNetwork(
+        n_input_feature=n_input_feature,
+        n_output=n_class)
 
     # TODO: Setup learning rate optimizer
     # https://pytorch.org/docs/stable/optim.html?#torch.optim.SGD
