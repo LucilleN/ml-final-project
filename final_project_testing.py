@@ -254,18 +254,12 @@ def train(net,
 
         for batch, (images, labels) in enumerate(dataloader):
 
-            # TODO: Vectorize images from (N, H, W, C) to (N, d)
-            # print("images.shape originally is", images.shape)
-            # print("labels.shape originally is", labels.shape)
-
             # TODO: Forward through the network
             outputs = net(images)
             # TODO: Clear gradients so we don't accumlate them from previous batches
             optimizer.zero_grad()
 
             # TODO: Compute loss function
-            # print("about to compute loss")
-
             # print("output shape:", outputs.shape)
             # print("labels shape:", labels.shape)
             labels=torch.squeeze(labels)
@@ -304,16 +298,14 @@ def evaluate(net, dataloader):
     # Make sure we do not backpropagate
     with torch.no_grad():
 
-        for (images, labels) in dataloader:
-
-            # TODO: Vectorize images from (N, H, W, C) to (N, d)
-            shape = images.shape
-            n_dim = np.prod(shape[1:])
-            images = images.view(-1, n_dim)
+        for batch, (images, labels) in enumerate(dataloader):
 
             # TODO: Forward through the network
             outputs = net(images)
-
+            
+            print("output shape:", outputs.shape)
+            print("labels shape:", labels.shape)
+            
             # TODO: Take the argmax over the outputs
             _, predictions = torch.max(outputs, dim=1)
 
@@ -390,17 +382,7 @@ if __name__ == '__main__':
     # TODO: Set up data preprocessing step
     # https://pytorch.org/docs/stable/torchvision/transforms.html
     data_preprocess_transform = torchvision.transforms.Compose([
-        # 2^(number of max pools you do) what is the max pools that we are going to do?
-        # what? what's 2^number of max pools for
-        # he says when we resize it should be divisilbe by that amount
-        # we do 3 max pools, so 2^3 is 8
-        # 512 is divisible by 8 ok 
-        # but isn't the output size we want 500 by 500?
-        # it shouldn't matter, he said we don't ever have to specify input size or output size
-        # we should instead design th enetwork so it's symmetrical and its output ends up as the 
-        # same size as the input
-        # aight we gucci
-        # lit still debugging
+        # image size should be divisble by 2^(number of max pools)
         torchvision.transforms.Resize((64,64)),
         torchvision.transforms.ToTensor()
     ])
@@ -421,20 +403,21 @@ if __name__ == '__main__':
         shuffle=True,
         num_workers=2)
 
-    # # Download and setup your validation/testing set
-    # dataset_test = torchvision.datasets.VOCSegmentation(
-    #     root='./data',
-    #     year= '2012',
-    #     image_set= 'val',
-    #     download=True,
-    #     transform=data_preprocess_transform)
+    # Download and setup your validation/testing set
+    dataset_test = torchvision.datasets.VOCSegmentation(
+        root='./data',
+        year= '2012',
+        image_set= 'val',
+        download=True,
+        transform=data_preprocess_transform,
+        target_transform=data_preprocess_transform)
 
-    # # TODO: Setup a dataloader (iterator) to fetch from the validation/testing set
-    # dataloader_test = torch.utils.data.DataLoader(
-    #     dataset_test,
-    #     batch_size=args.batch_size,
-    #     shuffle=False,
-    #     num_workers=2)
+    # TODO: Setup a dataloader (iterator) to fetch from the validation/testing set
+    dataloader_test = torch.utils.data.DataLoader(
+        dataset_test,
+        batch_size=args.batch_size,
+        shuffle=False,
+        num_workers=2)
 
     # Define the possible classes in VOC 2012 dataset
     classes = [
@@ -499,8 +482,7 @@ if __name__ == '__main__':
     # Set network to evaluation mode
     net.eval()
 
-    # # TODO: Evaluate network on testing set
-    # evaluate(
-    #     net=net,
-    #     dataloader=dataloader_test,
-    #     classes=classes)
+    # TODO: Evaluate network on testing set
+    evaluate(
+        net=net,
+        dataloader=dataloader_test)
