@@ -259,14 +259,8 @@ def train(net,
         for batch, (images, labels) in enumerate(dataloader):
 
             # TODO: Vectorize images from (N, H, W, C) to (N, d)
-            print("images.shape originally is", images.shape)
-            # n_dim = np.prod(images.shape[1:])
-            # images = images.view(-1, n_dim)
-            # print("images.shape changed to", images.shape)
-            print("labels.shape originally is", labels.shape)
-            # n_label_dim = np.prod(labels.shape[1:])
-            # labels = labels.view(-1, n_label_dim)
-            # print("labels.shape changed to", labels.shape)
+            # print("images.shape originally is", images.shape)
+            # print("labels.shape originally is", labels.shape)
 
             # TODO: Forward through the network
             outputs = net(images)
@@ -274,11 +268,10 @@ def train(net,
             optimizer.zero_grad()
 
             # TODO: Compute loss function
-            print("about to compute loss")
-            # outputs = torch.flatten(outputs)
-            # labels = torch.flatten(labels)
-            print("output shape:", outputs.shape)
-            print("labels shape:", labels.shape)
+            # print("about to compute loss")
+
+            # print("output shape:", outputs.shape)
+            # print("labels shape:", labels.shape)
             labels=torch.squeeze(labels)
             labels = labels.long()
             loss = loss_func(outputs, labels)
