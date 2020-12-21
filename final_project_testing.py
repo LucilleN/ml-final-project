@@ -261,7 +261,7 @@ def train(net,
             # TODO: Compute loss function
             # print("output shape:", outputs.shape)
             # print("labels shape:", labels.shape)
-            labels = torch.squeeze(labels)
+            labels = torch.squeeze(labels, dim=1)
             labels = labels.long()
             loss = loss_func(outputs, labels)
 
@@ -293,6 +293,10 @@ def evaluate(net, dataloader):
         Please add any necessary arguments
     '''
     n_sample = 0
+
+    cumulative_predictions = torch.tensor([])
+    cumulative_ground_truths = torch.tensor([])
+
     # Make sure we do not backpropagate
     with torch.no_grad():
 
@@ -302,22 +306,26 @@ def evaluate(net, dataloader):
             outputs = net(images)
             
             # TODO: Take the argmax over the outputs
-            print("predictions og shape:", outputs.shape)
-            print("ground_truths og shape:", labels.shape)
+            # print("predictions og shape:", outputs.shape)
+            # print("ground_truths og shape:", labels.shape)
 
             _, predictions = torch.max(outputs, dim=1)
             # TODO: Reshape labels from (N, , W, C) to (N, H, W)
-            ground_truths = torch.squeeze(labels)
-            print("predictions shape:", predictions.shape)
-            print("ground_truths shape:", ground_truths.shape)
+            ground_truths = torch.squeeze(labels, dim=1)
+            # print("predictions shape:", predictions.shape)
+            # print("ground_truths shape:", ground_truths.shape)
 
             # Accumulate number of samples
             n_sample = n_sample + labels.shape[0]
 
+            cumulative_predictions = torch.cat((cumulative_predictions, predictions), 0)
+            cumulative_ground_truths = torch.cat((cumulative_ground_truths, ground_truths), 0)
+
     # TODO: Compute mean evaluation metric(s)
-    IOU = intersection_over_union(predictions, images)
+    IOU = intersection_over_union(cumulative_predictions, cumulative_ground_truths)
+    print("returned IOU is", IOU)
     # TODO: Print scores
-    print('Jaccard Index over %d images: %d %%' % (n_sample, IOU))
+    print(f'Jaccard Index over {n_sample} images: {IOU * 100.0}%')
 
     # TODO: Plot images
     # plot_images(images, predictions, n_row=2, n_col= int(images.shape[0] / 2), fig_title='VOC 2012 Classification Results')  
@@ -340,11 +348,11 @@ def intersection_over_union(prediction, ground_truth):
     # TODO: Computes intersection over union score
     # Implement ONLY if you are working on semantic segmentation
     labels = torch.unique(ground_truth)
-    ious = 0
+    ious = 0.0
     for label in labels:
         intersection = torch.sum((prediction==ground_truth) * (ground_truth==label))
         # union = torch.where(prediction == label or ground_truth == label, 1, 0)
-        union = torch.sum((prediction==label) + (ground_truth==label)) - intersection
+        union = torch.sum((prediction==label) + (ground_truth==label))
         # iou = float(torch.sum(intersection) / torch.sum(union))
         iou = float(intersection / union)
         print("single iou:", iou)
@@ -391,21 +399,21 @@ if __name__ == '__main__':
         torchvision.transforms.ToTensor()
     ])
 
-    # # Download and setup your training set
-    # dataset_train = torchvision.datasets.VOCSegmentation(
-    #     root='./data',
-    #     year= '2012',
-    #     image_set= 'train',
-    #     download=True,
-    #     transform=data_preprocess_transform,
-    #     target_transform=data_preprocess_transform)
+    # Download and setup your training set
+    dataset_train = torchvision.datasets.VOCSegmentation(
+        root='./data',
+        year= '2012',
+        image_set= 'train',
+        download=True,
+        transform=data_preprocess_transform,
+        target_transform=data_preprocess_transform)
 
-    # # Setup a dataloader (iterator) to fetch from the training set
-    # dataloader_train = torch.utils.data.DataLoader(
-    #     dataset_train,
-    #     batch_size=args.batch_size,
-    #     shuffle=True,
-    #     num_workers=2)
+    # Setup a dataloader (iterator) to fetch from the training set
+    dataloader_train = torch.utils.data.DataLoader(
+        dataset_train,
+        batch_size=args.batch_size,
+        shuffle=True,
+        num_workers=2)
 
     # Download and setup your validation/testing set
     dataset_test = torchvision.datasets.VOCSegmentation(
