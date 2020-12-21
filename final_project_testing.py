@@ -255,15 +255,25 @@ def train(net,
 
             # TODO: Forward through the network
             outputs = net(images)
+
+            _, predictions = torch.max(outputs, dim=1)
+            # print("train > predictions shape", predictions.shape)
+            # print("train > unique predictions")
+            # print(torch.unique(predictions))
+
             # TODO: Clear gradients so we don't accumlate them from previous batches
             optimizer.zero_grad()
 
             # TODO: Compute loss function
-            # print("output shape:", outputs.shape)
-            # print("labels shape:", labels.shape)
+
             labels = torch.squeeze(labels, dim=1)
+            labels = torch.round(labels * 255)
             labels = labels.long()
-            loss = loss_func(outputs, labels)
+            predictions = predictions.long()
+            print("predictions shape:", predictions.shape)
+            print("labels shape:", labels.shape)
+            # loss = loss_func(outputs, labels)
+            loss = loss_func(predictions, labels)
 
             # TODO: Update parameters by backpropagation
             loss.backward()
@@ -301,17 +311,25 @@ def evaluate(net, dataloader):
     with torch.no_grad():
 
         for batch, (images, labels) in enumerate(dataloader):
-
+            # print("unique labels:", torch.unique(labels))
             # TODO: Forward through the network
             outputs = net(images)
-            
+            # print("eval > unique outputs")
+            # print(torch.unique(outputs))
+            print("eval > outputs shape", outputs.shape)
             # TODO: Take the argmax over the outputs
             # print("predictions og shape:", outputs.shape)
             # print("ground_truths og shape:", labels.shape)
 
             _, predictions = torch.max(outputs, dim=1)
+            print("eval > predictions shape", predictions.shape)
+            print("eval > unique predictions")
+            print(torch.unique(predictions))
             # TODO: Reshape labels from (N, , W, C) to (N, H, W)
             ground_truths = torch.squeeze(labels, dim=1)
+            ground_truths = torch.round(ground_truths * 255)
+            # print("ground_truths")
+            # print(ground_truths)
             # print("predictions shape:", predictions.shape)
             # print("ground_truths shape:", ground_truths.shape)
 
@@ -348,14 +366,21 @@ def intersection_over_union(prediction, ground_truth):
     # TODO: Computes intersection over union score
     # Implement ONLY if you are working on semantic segmentation
     labels = torch.unique(ground_truth)
+    # labels = torch.round(labels * 255)
+    # ground_truth = torch.round(ground_truth * 255)
+    print("unique labels:")
+    print(labels)
+    print("unique predictions:")
+    print(torch.unique(prediction))
     ious = 0.0
     for label in labels:
+        print("calculating iou for label", label)
         intersection = torch.sum((prediction==ground_truth) * (ground_truth==label))
         # union = torch.where(prediction == label or ground_truth == label, 1, 0)
         union = torch.sum((prediction==label) + (ground_truth==label))
         # iou = float(torch.sum(intersection) / torch.sum(union))
         iou = float(intersection / union)
-        print("single iou:", iou)
+        print("intersection:", intersection, "union:", union, "single iou:", iou)
         ious += iou
     # J(A,B) = |A && B| / |A U B| == |A && B| / (|A|+|B| - |A&&B|)
     # ^ i guess  big daddy wong is back online iconic
@@ -456,7 +481,7 @@ if __name__ == '__main__':
     ]
 
     # VOC 2012 dataset has 20 classes
-    n_class = 20
+    n_class = 256
 
     # TODO: Define network
     net = FullyConvolutionalNetwork(
