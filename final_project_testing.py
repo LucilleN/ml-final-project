@@ -280,7 +280,6 @@ def train(net,
             print("output shape:", outputs.shape)
             print("labels shape:", labels.shape)
             labels=torch.squeeze(labels)
-            outputs = outputs.long()
             labels = labels.long()
             loss = loss_func(outputs, labels)
 
