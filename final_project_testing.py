@@ -51,7 +51,7 @@ class FullyConvolutionalNetwork(nn.Module):
         Please add any necessary arguments
     '''
 
-    def __init__(self, n_class):
+    def __init__(self, img_dimensions, n_class):
         super(FullyConvolutionalNetwork, self).__init__()
 
         # TODO: Design your neural network using
@@ -83,15 +83,15 @@ class FullyConvolutionalNetwork(nn.Module):
         self.pool1 = torch.nn.MaxPool2d(kernel_size=self.kernel_size, stride=self.stride)  
 
         # Convolutional 2
-        self.conv2_1 = torch.nn.Conv2d(in_channels=64, out_channels=128, kernel_size=self.kernel_size, padding=1)
-        self.conv2_2 = torch.nn.Conv2d(in_channels=128, out_channels=128, kernel_size=self.kernel_size, padding=1)
+        self.conv2_1 = torch.nn.Conv2d(in_channels=64, out_channels=64, kernel_size=self.kernel_size, padding=1)
+        self.conv2_2 = torch.nn.Conv2d(in_channels=64, out_channels=64, kernel_size=self.kernel_size, padding=1)
         
         # Pooling 2
         self.pool2 = torch.nn.AvgPool2d(kernel_size=self.kernel_size, stride=self.stride) 
 
         # Convolutional 3
-        self.conv3_1 = torch.nn.Conv2d(in_channels=128, out_channels=128, kernel_size=self.kernel_size, padding=1)
-        self.conv3_2 = torch.nn.Conv2d(in_channels=128, out_channels=128, kernel_size=self.kernel_size, padding=1)
+        self.conv3_1 = torch.nn.Conv2d(in_channels=64, out_channels=64, kernel_size=self.kernel_size, padding=1)
+        self.conv3_2 = torch.nn.Conv2d(in_channels=64, out_channels=64, kernel_size=self.kernel_size, padding=1)
         
         # Pooling 3
         self.pool3 = torch.nn.MaxPool2d(kernel_size=self.kernel_size, stride=self.stride) 
@@ -101,43 +101,39 @@ class FullyConvolutionalNetwork(nn.Module):
         """
 
         # Convolutional 4
-        self.conv4_1 = torch.nn.Conv2d(in_channels=128, out_channels=128, kernel_size=self.kernel_size, padding=1)
-        self.conv4_2 = torch.nn.Conv2d(in_channels=128, out_channels=128, kernel_size=self.kernel_size, padding=1)
+        self.conv4_1 = torch.nn.Conv2d(in_channels=64, out_channels=64, kernel_size=self.kernel_size, padding=1)
+        self.conv4_2 = torch.nn.Conv2d(in_channels=64, out_channels=64, kernel_size=self.kernel_size, padding=1)
 
         """
         Decoding
         """
 
         # Upsampling / Transpose Convolutional 1
-        self.transposed_conv1 = torch.nn.ConvTranspose2d(in_channels=128, out_channels=128, kernel_size=self.kernel_size, stride=self.stride)
+        self.transposed_conv1 = torch.nn.ConvTranspose2d(in_channels=64, out_channels=64, kernel_size=self.kernel_size, stride=self.stride)
 
         # Convolutional 5
-        self.conv5_1 = torch.nn.Conv2d(in_channels=128, out_channels=128, kernel_size=self.kernel_size, padding=1)
-        self.conv5_2 = torch.nn.Conv2d(in_channels=128, out_channels=128, kernel_size=self.kernel_size, padding=1)
+        self.conv5_1 = torch.nn.Conv2d(in_channels=64, out_channels=64, kernel_size=self.kernel_size, padding=1)
+        self.conv5_2 = torch.nn.Conv2d(in_channels=64, out_channels=64, kernel_size=self.kernel_size, padding=1)
         
         # Upsampling / Transpose Convolutional 2
-        # no ouput padding for this?
-        # lets see lmao ive tried every combination i could think of
-        # im that meme of the sandal and the sock lol, bruh
-        # WHERE THE FUCK IS 511 COMING FROM SDSKLJGFLSKDFJ
-        self.transposed_conv2 = torch.nn.ConvTranspose2d(in_channels=128, out_channels=128, kernel_size=self.kernel_size, stride=self.stride)
+        self.transposed_conv2 = torch.nn.ConvTranspose2d(in_channels=64, out_channels=64, kernel_size=self.kernel_size, stride=self.stride)
 
         # Convolutional 6
-        self.conv6_1 = torch.nn.Conv2d(in_channels=128, out_channels=128, kernel_size=self.kernel_size, padding=1)
-        self.conv6_2 = torch.nn.Conv2d(in_channels=128, out_channels=128, kernel_size=self.kernel_size, padding=1)
+        self.conv6_1 = torch.nn.Conv2d(in_channels=64, out_channels=64, kernel_size=self.kernel_size, padding=1)
+        self.conv6_2 = torch.nn.Conv2d(in_channels=64, out_channels=32, kernel_size=self.kernel_size, padding=1)
         
         # Upsampling / Transpose Convolutional 3
-        self.transposed_conv3 = torch.nn.ConvTranspose2d(in_channels=128, out_channels=128, kernel_size=self.kernel_size, stride=self.stride)
+        self.transposed_conv3 = torch.nn.ConvTranspose2d(in_channels=32, out_channels=32, kernel_size=self.kernel_size, stride=self.stride)
 
         # Convolutional 7
-        self.conv7_1 = torch.nn.Conv2d(in_channels=128, out_channels=64, kernel_size=self.kernel_size, padding=1)
-        self.conv7_2 = torch.nn.Conv2d(in_channels=64, out_channels=n_class, kernel_size=self.kernel_size, padding=1)
+        self.conv7_1 = torch.nn.Conv2d(in_channels=32, out_channels=32, kernel_size=self.kernel_size, padding=1)
+        self.conv7_2 = torch.nn.Conv2d(in_channels=32, out_channels=n_class, kernel_size=self.kernel_size, padding=1)
 
         """
         Fixing the one-pixel mismatch with an upsampling layer
         """
         # ayyyyyyyyy
-        self.upsample = torch.nn.Upsample((512,512))
+        self.upsample = torch.nn.Upsample((img_dimensions,img_dimensions))
 
     def forward(self, x):
         '''
@@ -405,7 +401,7 @@ if __name__ == '__main__':
         # same size as the input
         # aight we gucci
         # lit still debugging
-        torchvision.transforms.Resize((512,512)),
+        torchvision.transforms.Resize((64,64)),
         torchvision.transforms.ToTensor()
     ])
 
@@ -470,6 +466,7 @@ if __name__ == '__main__':
     # TODO: Define network
     net = FullyConvolutionalNetwork(
         # n_input_feature=num_features,
+        img_dimensions=64,
         n_class=n_class)
 
     # TODO: Setup learning rate optimizer
