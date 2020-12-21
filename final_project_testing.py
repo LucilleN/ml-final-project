@@ -69,6 +69,7 @@ class FullyConvolutionalNetwork(nn.Module):
         
         self.activation_function = torch.nn.ReLU(inplace=True)
         self.kernel_size = 3
+        self.stride = 2
 
         """
         Encoding
@@ -79,21 +80,21 @@ class FullyConvolutionalNetwork(nn.Module):
         self.conv1_2 = nn.Conv2d(in_channels=64, out_channels=64, kernel_size=self.kernel_size, padding=1)
         
         # Pooling 1
-        self.pool1 = torch.nn.MaxPool2d(kernel_size=2, stride=2)  
+        self.pool1 = torch.nn.MaxPool2d(kernel_size=self.kernel_size, stride=self.stride)  
 
         # Convolutional 2
         self.conv2_1 = torch.nn.Conv2d(in_channels=64, out_channels=128, kernel_size=self.kernel_size, padding=1)
         self.conv2_2 = torch.nn.Conv2d(in_channels=128, out_channels=128, kernel_size=self.kernel_size, padding=1)
         
         # Pooling 2
-        self.pool2 = torch.nn.MaxPool2d(kernel_size=2, stride=2) 
+        self.pool2 = torch.nn.AvgPool2d(kernel_size=self.kernel_size, stride=self.stride) 
 
         # Convolutional 3
         self.conv3_1 = torch.nn.Conv2d(in_channels=128, out_channels=128, kernel_size=self.kernel_size, padding=1)
         self.conv3_2 = torch.nn.Conv2d(in_channels=128, out_channels=128, kernel_size=self.kernel_size, padding=1)
         
         # Pooling 3
-        self.pool3 = torch.nn.MaxPool2d(kernel_size=2, stride=2) 
+        self.pool3 = torch.nn.MaxPool2d(kernel_size=self.kernel_size, stride=self.stride) 
 
         """
         Latent Vector
@@ -108,36 +109,45 @@ class FullyConvolutionalNetwork(nn.Module):
         """
 
         # Upsampling / Transpose Convolutional 1
-        self.transposed_conv1 = nn.ConvTranspose2d(in_channels=128, out_channels=128, kernel_size=self.kernel_size, output_padding=1)
+        self.transposed_conv1 = torch.nn.ConvTranspose2d(in_channels=128, out_channels=128, kernel_size=self.kernel_size, stride=self.stride)
 
         # Convolutional 5
         self.conv5_1 = torch.nn.Conv2d(in_channels=128, out_channels=128, kernel_size=self.kernel_size, padding=1)
         self.conv5_2 = torch.nn.Conv2d(in_channels=128, out_channels=128, kernel_size=self.kernel_size, padding=1)
         
         # Upsampling / Transpose Convolutional 2
-        self.transposed_conv2 = nn.ConvTranspose2d(in_channels=128, out_channels=128, kernel_size=self.kernel_size, output_padding=1)
+        # no ouput padding for this?
+        # lets see lmao ive tried every combination i could think of
+        # im that meme of the sandal and the sock lol, bruh
+        # WHERE THE FUCK IS 511 COMING FROM SDSKLJGFLSKDFJ
+        self.transposed_conv2 = torch.nn.ConvTranspose2d(in_channels=128, out_channels=128, kernel_size=self.kernel_size, stride=self.stride)
 
         # Convolutional 6
         self.conv6_1 = torch.nn.Conv2d(in_channels=128, out_channels=128, kernel_size=self.kernel_size, padding=1)
         self.conv6_2 = torch.nn.Conv2d(in_channels=128, out_channels=128, kernel_size=self.kernel_size, padding=1)
         
         # Upsampling / Transpose Convolutional 3
-        self.transposed_conv3 = nn.ConvTranspose2d(in_channels=128, out_channels=128, kernel_size=self.kernel_size, output_padding=1)
+        self.transposed_conv3 = torch.nn.ConvTranspose2d(in_channels=128, out_channels=128, kernel_size=self.kernel_size, stride=self.stride)
 
         # Convolutional 7
-        self.conv7_1 = nn.Conv2d(in_channels=128, out_channels=64, kernel_size=self.kernel_size, padding=1)
-        self.conv7_2 = nn.Conv2d(in_channels=64, out_channels=n_class, kernel_size=self.kernel_size, padding=1)
+        self.conv7_1 = torch.nn.Conv2d(in_channels=128, out_channels=64, kernel_size=self.kernel_size, padding=1)
+        self.conv7_2 = torch.nn.Conv2d(in_channels=64, out_channels=n_class, kernel_size=self.kernel_size, padding=1)
 
+        """
+        Fixing the one-pixel mismatch with an upsampling layer
+        """
+        # ayyyyyyyyy
+        self.upsample = torch.nn.Upsample((512,512))
 
     def forward(self, x):
         '''
-            Args:
-                x : torch.Tensor
-                    tensor of N x d
+        Args:
+            x : torch.Tensor
+                tensor of N x d
 
-            Returns:
-                torch.Tensor
-                    tensor of n_output
+        Returns:
+            torch.Tensor
+                tensor of n_output
         '''
 
         h = x
@@ -193,6 +203,8 @@ class FullyConvolutionalNetwork(nn.Module):
         # Convolutional 7
         h = self.activation_function(self.conv7_1(h))
         h = self.activation_function(self.conv7_2(h))
+
+        h = self.upsample(h)
 
         return h
 
@@ -258,7 +270,6 @@ def train(net,
 
             # TODO: Forward through the network
             outputs = net(images)
-
             # TODO: Clear gradients so we don't accumlate them from previous batches
             optimizer.zero_grad()
 
@@ -268,6 +279,9 @@ def train(net,
             # labels = torch.flatten(labels)
             print("output shape:", outputs.shape)
             print("labels shape:", labels.shape)
+            labels=torch.squeeze(labels)
+            outputs = outputs.long()
+            labels = labels.long()
             loss = loss_func(outputs, labels)
 
             # TODO: Update parameters by backpropagation
@@ -388,7 +402,18 @@ if __name__ == '__main__':
     # TODO: Set up data preprocessing step
     # https://pytorch.org/docs/stable/torchvision/transforms.html
     data_preprocess_transform = torchvision.transforms.Compose([
-        torchvision.transforms.Resize((32,32)),
+        # 2^(number of max pools you do) what is the max pools that we are going to do?
+        # what? what's 2^number of max pools for
+        # he says when we resize it should be divisilbe by that amount
+        # we do 3 max pools, so 2^3 is 8
+        # 512 is divisible by 8 ok 
+        # but isn't the output size we want 500 by 500?
+        # it shouldn't matter, he said we don't ever have to specify input size or output size
+        # we should instead design th enetwork so it's symmetrical and its output ends up as the 
+        # same size as the input
+        # aight we gucci
+        # lit still debugging
+        torchvision.transforms.Resize((512,512)),
         torchvision.transforms.ToTensor()
     ])
 
@@ -446,10 +471,6 @@ if __name__ == '__main__':
         'sofa', 
         'tv/monitor'
     ]
-
-    # Number of input features: 3 (channel) by 32 (height) by 32 (width)
-    num_pixels = 32 * 32
-    num_features = num_pixels * 3
 
     # VOC 2012 dataset has 20 classes
     n_class = 20
