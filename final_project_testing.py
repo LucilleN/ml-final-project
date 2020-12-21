@@ -76,22 +76,22 @@ class FullyConvolutionalNetwork(nn.Module):
         """
 
         # Convolutional 1
-        self.conv1_1 = nn.Conv2d(in_channels=3, out_channels=64, kernel_size=self.kernel_size, padding=1)
-        self.conv1_2 = nn.Conv2d(in_channels=64, out_channels=64, kernel_size=self.kernel_size, padding=1)
+        self.conv1_1 = nn.Conv2d(in_channels=3, out_channels=32, kernel_size=self.kernel_size, padding=1)
+        self.conv1_2 = nn.Conv2d(in_channels=32, out_channels=32, kernel_size=self.kernel_size, padding=1)
         
         # Pooling 1
         self.pool1 = torch.nn.MaxPool2d(kernel_size=self.kernel_size, stride=self.stride)  
 
         # Convolutional 2
-        self.conv2_1 = torch.nn.Conv2d(in_channels=64, out_channels=64, kernel_size=self.kernel_size, padding=1)
-        self.conv2_2 = torch.nn.Conv2d(in_channels=64, out_channels=64, kernel_size=self.kernel_size, padding=1)
+        self.conv2_1 = torch.nn.Conv2d(in_channels=32, out_channels=32, kernel_size=self.kernel_size, padding=1)
+        self.conv2_2 = torch.nn.Conv2d(in_channels=32, out_channels=32, kernel_size=self.kernel_size, padding=1)
         
         # Pooling 2
         self.pool2 = torch.nn.AvgPool2d(kernel_size=self.kernel_size, stride=self.stride) 
 
         # Convolutional 3
-        self.conv3_1 = torch.nn.Conv2d(in_channels=64, out_channels=64, kernel_size=self.kernel_size, padding=1)
-        self.conv3_2 = torch.nn.Conv2d(in_channels=64, out_channels=64, kernel_size=self.kernel_size, padding=1)
+        self.conv3_1 = torch.nn.Conv2d(in_channels=32, out_channels=32, kernel_size=self.kernel_size, padding=1)
+        self.conv3_2 = torch.nn.Conv2d(in_channels=32, out_channels=32, kernel_size=self.kernel_size, padding=1)
         
         # Pooling 3
         self.pool3 = torch.nn.MaxPool2d(kernel_size=self.kernel_size, stride=self.stride) 
@@ -101,26 +101,26 @@ class FullyConvolutionalNetwork(nn.Module):
         """
 
         # Convolutional 4
-        self.conv4_1 = torch.nn.Conv2d(in_channels=64, out_channels=64, kernel_size=self.kernel_size, padding=1)
-        self.conv4_2 = torch.nn.Conv2d(in_channels=64, out_channels=64, kernel_size=self.kernel_size, padding=1)
+        self.conv4_1 = torch.nn.Conv2d(in_channels=32, out_channels=32, kernel_size=self.kernel_size, padding=1)
+        self.conv4_2 = torch.nn.Conv2d(in_channels=32, out_channels=32, kernel_size=self.kernel_size, padding=1)
 
         """
         Decoding
         """
 
         # Upsampling / Transpose Convolutional 1
-        self.transposed_conv1 = torch.nn.ConvTranspose2d(in_channels=64, out_channels=64, kernel_size=self.kernel_size, stride=self.stride)
+        self.transposed_conv1 = torch.nn.ConvTranspose2d(in_channels=32, out_channels=32, kernel_size=self.kernel_size, stride=self.stride)
 
         # Convolutional 5
-        self.conv5_1 = torch.nn.Conv2d(in_channels=64, out_channels=64, kernel_size=self.kernel_size, padding=1)
-        self.conv5_2 = torch.nn.Conv2d(in_channels=64, out_channels=64, kernel_size=self.kernel_size, padding=1)
+        self.conv5_1 = torch.nn.Conv2d(in_channels=32, out_channels=32, kernel_size=self.kernel_size, padding=1)
+        self.conv5_2 = torch.nn.Conv2d(in_channels=32, out_channels=32, kernel_size=self.kernel_size, padding=1)
         
         # Upsampling / Transpose Convolutional 2
-        self.transposed_conv2 = torch.nn.ConvTranspose2d(in_channels=64, out_channels=64, kernel_size=self.kernel_size, stride=self.stride)
+        self.transposed_conv2 = torch.nn.ConvTranspose2d(in_channels=32, out_channels=32, kernel_size=self.kernel_size, stride=self.stride)
 
         # Convolutional 6
-        self.conv6_1 = torch.nn.Conv2d(in_channels=64, out_channels=64, kernel_size=self.kernel_size, padding=1)
-        self.conv6_2 = torch.nn.Conv2d(in_channels=64, out_channels=32, kernel_size=self.kernel_size, padding=1)
+        self.conv6_1 = torch.nn.Conv2d(in_channels=32, out_channels=32, kernel_size=self.kernel_size, padding=1)
+        self.conv6_2 = torch.nn.Conv2d(in_channels=32, out_channels=32, kernel_size=self.kernel_size, padding=1)
         
         # Upsampling / Transpose Convolutional 3
         self.transposed_conv3 = torch.nn.ConvTranspose2d(in_channels=32, out_channels=32, kernel_size=self.kernel_size, stride=self.stride)
@@ -132,7 +132,6 @@ class FullyConvolutionalNetwork(nn.Module):
         """
         Fixing the one-pixel mismatch with an upsampling layer
         """
-        # ayyyyyyyyy
         self.upsample = torch.nn.Upsample((img_dimensions,img_dimensions))
 
     def forward(self, x):
@@ -299,47 +298,37 @@ def evaluate(net, dataloader):
 
         Please add any necessary arguments
     '''
-    n_correct = 0
     n_sample = 0
     # Make sure we do not backpropagate
     with torch.no_grad():
-
+        # not labels are groundtruths
         for (images, labels) in dataloader:
-
-            # TODO: Vectorize images from (N, H, W, C) to (N, d)
-            shape = images.shape
-            n_dim = np.prod(shape[1:])
-            images = images.view(-1, n_dim)
-
             # TODO: Forward through the network
             outputs = net(images)
-
-            # TODO: Take the argmax over the outputs
+            # TODO: Take the argmax over the outputs on C to get predictions (N, C, H, W) to be (N, H, W)
             _, predictions = torch.max(outputs, dim=1)
-
+            # TODO: Reshape labels from (N, H, W, C) to (N, H, W)
+            ground_truths = labels[:, 0, :, :]
             # Accumulate number of samples
             n_sample = n_sample + labels.shape[0]
-
-            # TODO: Check if our prediction is correct
-            n_correct = n_correct + torch.sum(predictions == labels).item()
+            # print("predictions.shape originally is", predictions.shape)
+            # print("ground_truths.shape originally is", ground_truths.shape)
 
     # TODO: Compute mean evaluation metric(s)
-    mean_accuracy = 100.0 * n_correct / n_sample
-    # IOU = intersection_over_union(predictions, images)
+    IOU = intersection_over_union(predictions, images)
     # TODO: Print scores
-    # print('Jaccard Index over %d images: %d %%' % (n_sample, IOU))
-    print('Mean accuracy over %d images: %d %%' % (n_sample, mean_accuracy))
-    # TODO: Convert the last batch of images back to original shape
-    images = images.view(shape[0], shape[1], shape[2], shape[3])
-    images = images.cpu().numpy()
-    images = np.transpose(images, (0, 2, 3, 1))
-    # TODO: Convert the last batch of predictions to the original image shape
-    predictions = predictions.view(shape[0], shape[1], shape[2], shape[3])
-    predictions = predictions.cpu().numpy()
-    predictions = np.transpose(predictions, (0, 2, 3, 1))
+    print('Jaccard Index over %d images: %d %%' % (n_sample, 0.0))
+    # # TODO: Convert the last batch of images back to original shape
+    # images = images.view(shape[0], shape[1], shape[2], shape[3])
+    # images = images.cpu().numpy()
+    # images = np.transpose(images, (0, 2, 3, 1))
+    # # TODO: Convert the last batch of predictions to the original image shape
+    # predictions = predictions.view(shape[0], shape[1], shape[2], shape[3])
+    # predictions = predictions.cpu().numpy()
+    # predictions = np.transpose(predictions, (0, 2, 3, 1))
     # TODO: Plot images
     # plot_images(images, predictions, n_row=2, n_col= int(images.shape[0] / 2), fig_title='VOC 2012 Classification Results')  
-    plt.show()
+    # plt.show()
 
 def intersection_over_union(prediction, ground_truth):
     '''
@@ -401,7 +390,7 @@ if __name__ == '__main__':
         # same size as the input
         # aight we gucci
         # lit still debugging
-        torchvision.transforms.Resize((64,64)),
+        torchvision.transforms.Resize((32,32)),
         torchvision.transforms.ToTensor()
     ])
 
@@ -421,20 +410,21 @@ if __name__ == '__main__':
         shuffle=True,
         num_workers=2)
 
-    # # Download and setup your validation/testing set
-    # dataset_test = torchvision.datasets.VOCSegmentation(
-    #     root='./data',
-    #     year= '2012',
-    #     image_set= 'val',
-    #     download=True,
-    #     transform=data_preprocess_transform)
+    # Download and setup your validation/testing set
+    dataset_test = torchvision.datasets.VOCSegmentation(
+        root='./data',
+        year= '2012',
+        image_set= 'val',
+        download=True,
+        transform=data_preprocess_transform,
+        target_transform=data_preprocess_transform)
 
-    # # TODO: Setup a dataloader (iterator) to fetch from the validation/testing set
-    # dataloader_test = torch.utils.data.DataLoader(
-    #     dataset_test,
-    #     batch_size=args.batch_size,
-    #     shuffle=False,
-    #     num_workers=2)
+    # TODO: Setup a dataloader (iterator) to fetch from the validation/testing set
+    dataloader_test = torch.utils.data.DataLoader(
+        dataset_test,
+        batch_size=args.batch_size,
+        shuffle=False,
+        num_workers=2)
 
     # Define the possible classes in VOC 2012 dataset
     classes = [
@@ -466,7 +456,7 @@ if __name__ == '__main__':
     # TODO: Define network
     net = FullyConvolutionalNetwork(
         # n_input_feature=num_features,
-        img_dimensions=64,
+        img_dimensions=32,
         n_class=n_class)
 
     # TODO: Setup learning rate optimizer
@@ -499,8 +489,7 @@ if __name__ == '__main__':
     # Set network to evaluation mode
     net.eval()
 
-    # # TODO: Evaluate network on testing set
-    # evaluate(
-    #     net=net,
-    #     dataloader=dataloader_test,
-    #     classes=classes)
+    # TODO: Evaluate network on testing set
+    evaluate(
+        net=net,
+        dataloader=dataloader_test)
