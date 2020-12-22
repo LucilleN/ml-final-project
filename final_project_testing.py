@@ -321,6 +321,8 @@ def evaluate(net, dataloader):
     cumulative_predictions = torch.tensor([])
     cumulative_ground_truths = torch.tensor([])
 
+    ious = 0
+
     # Make sure we do not backpropagate
     with torch.no_grad():
 
@@ -342,13 +344,17 @@ def evaluate(net, dataloader):
             # Accumulate number of samples
             n_sample = n_sample + labels.shape[0]
 
+            iou = intersection_over_union(predictions, ground_truths)
+            ious += iou
+
             cumulative_predictions = torch.cat((cumulative_predictions, predictions), 0)
             cumulative_ground_truths = torch.cat((cumulative_ground_truths, ground_truths), 0)
 
     # TODO: Compute mean evaluation metric(s)
-    IOU = intersection_over_union(cumulative_predictions, cumulative_ground_truths)
+    # IOU = intersection_over_union(cumulative_predictions, cumulative_ground_truths)
     # TODO: Print scores
-    print(f'Jaccard Index over {n_sample} images: {IOU * 100.0}%')
+    avg_iou = ious / float(len(dataloader))
+    print(f'Jaccard Index over {n_sample} images: {avg_iou}%')
 
     # TODO: Plot images
     # plot_images(images, predictions, n_row=2, n_col= int(images.shape[0] / 2), fig_title='VOC 2012 Classification Results')  
@@ -447,21 +453,21 @@ if __name__ == '__main__':
         shuffle=True,
         num_workers=2)
 
-    # # Download and setup your validation/testing set
-    # dataset_test = torchvision.datasets.VOCSegmentation(
-    #     root='./data',
-    #     year= '2012',
-    #     image_set= 'val',
-    #     download=True,
-    #     transform=data_preprocess_transform,
-    #     target_transform=data_preprocess_transform)
+    # Download and setup your validation/testing set
+    dataset_test = torchvision.datasets.VOCSegmentation(
+        root='./data',
+        year= '2012',
+        image_set= 'val',
+        download=True,
+        transform=data_preprocess_transform,
+        target_transform=data_preprocess_transform)
 
-    # # TODO: Setup a dataloader (iterator) to fetch from the validation/testing set
-    # dataloader_test = torch.utils.data.DataLoader(
-    #     dataset_test,
-    #     batch_size=args.batch_size,
-    #     shuffle=False,
-    #     num_workers=2)
+    # TODO: Setup a dataloader (iterator) to fetch from the validation/testing set
+    dataloader_test = torch.utils.data.DataLoader(
+        dataset_test,
+        batch_size=args.batch_size,
+        shuffle=False,
+        num_workers=2)
 
     # Define the possible classes in VOC 2012 dataset
     # classes = [
@@ -529,7 +535,7 @@ if __name__ == '__main__':
     # Set network to evaluation mode
     net.eval()
 
-    # # TODO: Evaluate network on testing set
-    # evaluate(
-    #     net=net,
-    #     dataloader=dataloader_test)
+    # TODO: Evaluate network on testing set
+    evaluate(
+        net=net,
+        dataloader=dataloader_test)
