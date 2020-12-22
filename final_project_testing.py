@@ -259,6 +259,12 @@ def train(net,
 
             # TODO: Forward through the network
             outputs = net(images)
+            outputs = outputs.view(outputs.shape[0], outputs.shape[1], -1)
+            # outputs = outputs.detach().numpy()
+            # outputs = torch.tensor(np.transpose(outputs, (0, 2, 1)))
+
+            # outputs = outputs.detach().numpy()
+            # outputs = torch.tensor(np.transpose(outputs, (0, 2, 3, 1)))
             # print("outputs shape:", outputs.shape)
             # print("outputs unique values are between: ", torch.min(outputs).item(), torch.max(outputs).item())
             # print("outputs[0] (a single sample of this batch) is")
@@ -271,11 +277,13 @@ def train(net,
 
             # TODO: Compute loss function
 
+            labels = labels.view(labels.shape[0], labels.shape[1], -1)
             labels = torch.squeeze(labels, dim=1)
             labels = torch.round(labels * 255)
             labels[labels==255] = 21
             labels = labels.long()
             # print("labels shape:", labels.shape)
+            # print("labels unique values are between: ", torch.min(labels).item(), torch.max(labels).item())
             # print("labels unique values are: ", torch.unique(labels))
             
             loss = loss_func(outputs, labels)
@@ -455,28 +463,30 @@ if __name__ == '__main__':
     #     num_workers=2)
 
     # Define the possible classes in VOC 2012 dataset
-    classes = [
-        'person',
-        'bird', 
-        'cat', 
-        'cow', 
-        'dog', 
-        'horse', 
-        'sheep', 
-        'aeroplane', 
-        'bicycle', 
-        'boat', 
-        'bus', 
-        'car',
-        'motorbike',
-        'train', 
-        'bottle', 
-        'chair', 
-        'dining table', 
-        'potted plant', 
-        'sofa', 
-        'tv/monitor'
-    ]
+    # classes = [
+    #     'background',
+    #     'person',
+    #     'bird', 
+    #     'cat', 
+    #     'cow', 
+    #     'dog', 
+    #     'horse', 
+    #     'sheep', 
+    #     'aeroplane', 
+    #     'bicycle', 
+    #     'boat', 
+    #     'bus', 
+    #     'car',
+    #     'motorbike',
+    #     'train', 
+    #     'bottle', 
+    #     'chair', 
+    #     'dining table', 
+    #     'potted plant', 
+    #     'sofa', 
+    #     'tv/monitor',
+    #     'none'
+    # ]
 
     # VOC 2012 dataset has 20 classes
     n_class = 22
@@ -489,11 +499,11 @@ if __name__ == '__main__':
 
     # TODO: Setup learning rate optimizer
     # https://pytorch.org/docs/stable/optim.html?#torch.optim.SGD
-    # optimizer = torch.optim.SGD(
-    optimizer = torch.optim.Adam(
+    optimizer = torch.optim.SGD(
+    # optimizer = torch.optim.Adam(
         net.parameters(),
         lr=args.learning_rate,
-        # momentum=args.momentum,
+        momentum=args.momentum,
         weight_decay=args.lambda_weight_decay)
 
     if args.train_network:
