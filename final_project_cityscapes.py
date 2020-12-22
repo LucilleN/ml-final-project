@@ -242,13 +242,12 @@ def train(net,
 
     # TODO: Define cross entropy loss
     # https://pytorch.org/docs/stable/generated/torch.nn.CrossEntropyLoss.html
-    # weights = [1.0] * 22
-    # weights[0] = 0.1
-    # weights[21] = 0.1
-    # class_weights = torch.FloatTensor(weights)
-    # loss_func = torch.nn.CrossEntropyLoss(weight=class_weights)
-    loss_func = torch.nn.CrossEntropyLoss(reduction='none')
-    
+    weights = [1.0] * 22
+    weights[0] = 0.1
+    weights[21] = 0.1
+    class_weights = torch.FloatTensor(weights)
+    loss_func = torch.nn.CrossEntropyLoss(weight=class_weights)
+
     for epoch in range(n_epoch):
 
         # Accumulate total loss for each epoch
@@ -264,11 +263,6 @@ def train(net,
         for batch, (images, labels) in enumerate(dataloader):
 
             # print("BATCH", batch)
-
-            weights_loss = torch.where(
-            torch.logical_and(labels != 0, labels != 21),
-            torch.ones_like(labels),
-            torch.zeros_like(labels))
             
             shape = images.shape[2:4]
             images = torch.nn.functional.interpolate(images, (IMG_SIZE, IMG_SIZE))
@@ -294,10 +288,7 @@ def train(net,
             # print("labels unique values are between: ", torch.min(labels).item(), torch.max(labels).item())
             # print("labels unique values are: ", torch.unique(labels))
             
-            # loss = loss_func(outputs, labels)
             loss = loss_func(outputs, labels)
-            loss = loss * weights_loss
-            loss = torch.mean(loss)
 
             # if batch > 10:
 
@@ -531,8 +522,7 @@ if __name__ == '__main__':
 
     # Download and setup your training set
     dataset_train = torchvision.datasets.VOCSegmentation(
-        root='./data',
-        year= '2012',
+        root='./gtFine_trainvaltest',
         image_set= 'train',
         download=True,
         transform=data_preprocess_transform_train,
@@ -547,8 +537,7 @@ if __name__ == '__main__':
 
     # Download and setup your validation/testing set
     dataset_test = torchvision.datasets.VOCSegmentation(
-        root='./data',
-        year= '2012',
+        root='./gtFine_trainvaltest',
         image_set= 'val',
         download=True,
         transform=data_preprocess_transform_test,
