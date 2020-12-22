@@ -198,7 +198,7 @@ class FullyConvolutionalNetwork(nn.Module):
         h = self.activation_function(self.transposed_conv3(h))
         # Convolutional 7
         h = self.activation_function(self.conv7_1(h))
-        h = self.activation_function(self.conv7_2(h))
+        h = self.conv7_2(h)
 
         # h = self.upsample(h)
         h = torch.nn.functional.interpolate(h, size=(self.img_dimensions, self.img_dimensions), mode='bilinear')
