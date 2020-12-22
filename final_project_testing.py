@@ -369,29 +369,30 @@ def intersection_over_union(prediction, ground_truth):
     '''
 
     # TODO: Computes intersection over union score
-    # Implement ONLY if you are working on semantic segmentation
-    labels = torch.unique(ground_truth)
-    # labels = torch.round(labels * 255)
-    # ground_truth = torch.round(ground_truth * 255)
-    print("unique labels:")
-    print(labels)
-    print("unique predictions:")
-    print(torch.unique(prediction))
-    ious = 0.0
-    for label in labels:
-        print("calculating iou for label", label)
-        intersection = torch.sum((prediction==ground_truth) * (ground_truth==label))
-        # union = torch.where(prediction == label or ground_truth == label, 1, 0)
-        union = torch.sum((prediction==label) + (ground_truth==label))
-        # iou = float(torch.sum(intersection) / torch.sum(union))
-        iou = float(intersection / union)
-        print("intersection:", intersection, "union:", union, "single iou:", iou)
-        ious += iou
-    # J(A,B) = |A && B| / |A U B| == |A && B| / (|A|+|B| - |A&&B|)
-    avg_iou = float(ious / len(labels))
 
-    print('IOU: ', avg_iou)
-    return avg_iou  # [A,B] full send!
+    intersection = torch.sum(torch.where(prediction==ground_truth, 1, 0))
+    union = 2 * torch.prod(torch.tensor(prediction.shape)) - intersection
+    return float(intersection) / float(union)
+
+
+    # labels = torch.unique(ground_truth)
+    # print("unique labels:")
+    # print(labels)
+    # print("unique predictions:")
+    # print(torch.unique(prediction))
+    # ious = 0.0
+    # for label in labels:
+    #     print("calculating iou for label", label)
+    #     intersection = torch.sum((prediction==ground_truth) * (ground_truth==label))
+    #     union = torch.sum((prediction==label) + (ground_truth==label))
+    #     iou = float(intersection / union)
+    #     print("intersection:", intersection, "union:", union, "single iou:", iou)
+    #     ious += iou
+    # # J(A,B) = |A && B| / |A U B| == |A && B| / (|A|+|B| - |A&&B|)
+    # avg_iou = float(ious / len(labels))
+
+    # print('IOU: ', avg_iou)
+    # return avg_iou  
 
 def plot_images(X, Y, n_row, n_col, fig_title):
     '''
