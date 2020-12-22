@@ -16,6 +16,7 @@ import torch.nn as nn
 import numpy as np
 import matplotlib.pyplot as plt
 
+IMG_SIZE = 256
 
 parser = argparse.ArgumentParser()
 
@@ -256,9 +257,23 @@ def train(net,
         for batch, (images, labels) in enumerate(dataloader):
 
             # print("BATCH", batch)
+            
+            shape = images.shape[2:4]
+            images = torch.nn.functional.interpolate(images, (IMG_SIZE, IMG_SIZE))
 
             # TODO: Forward through the network
             outputs = net(images)
+
+            outputs = torch.nn.functional.interpolate(outputs, (shape[0], shape[1]))
+
+            # print("outputs[0] (a single sample of this batch) is")
+            # print(outputs[0].shape)
+            # print(outputs[0])
+            first_prediction = outputs[0]
+            first_groundtruth = labels[0][0]
+            # print("unique labels in groundtruth", torch.unique(first_groundtruth))
+            first_image = images[0][0]
+            
             # outputs = outputs.view(outputs.shape[0], outputs.shape[1], -1)
             # outputs = outputs.detach().numpy()
             # outputs = torch.tensor(np.transpose(outputs, (0, 2, 1)))
@@ -287,6 +302,29 @@ def train(net,
             # print("labels unique values are: ", torch.unique(labels))
             
             loss = loss_func(outputs, labels)
+
+            # if batch > 10:
+
+            #     pred_fig = plt.figure()
+            #     for label in range(len(first_prediction)):
+            #         score_map = first_prediction[label, ...]
+            #         ax = pred_fig.add_subplot(2, 11, label+1)
+            #         ax.imshow(score_map.detach().numpy(), vmin=0.0, vmax=1.0)
+
+            #     groundtruth_fig = plt.figure()
+
+            #     ax = groundtruth_fig.add_subplot(1, 1, 1)
+            #     ax.imshow(first_groundtruth)
+
+            #     image_fig = plt.figure()
+            #     ax = image_fig.add_subplot(1, 1, 1)
+            #     ax.imshow(first_image)
+
+            #     plt.show()
+            #     break
+
+
+
             # print("LOSS", loss)
             
             # TODO: Update parameters by backpropagation
@@ -427,13 +465,13 @@ def plot_images(X, Y, n_row, n_col, fig_title):
 
 if __name__ == '__main__':
 
-    IMG_SIZE = 256
 
     # TODO: Set up data preprocessing step
     # https://pytorch.org/docs/stable/torchvision/transforms.html
     data_preprocess_transform = torchvision.transforms.Compose([
         # image size should be divisble by 2^(number of max pools)
-        torchvision.transforms.Resize((IMG_SIZE,IMG_SIZE)),
+        # torchvision.transforms.Resize((IMG_SIZE,IMG_SIZE)),
+        torchvision.transforms.CenterCrop((IMG_SIZE,IMG_SIZE)),
         torchvision.transforms.ToTensor()
     ])
 
@@ -469,31 +507,35 @@ if __name__ == '__main__':
         shuffle=False,
         num_workers=2)
 
-    # Define the possible classes in VOC 2012 dataset
+    # # Define the possible classes in VOC 2012 dataset
     # classes = [
     #     'background',
-    #     'person',
-    #     'bird', 
-    #     'cat', 
-    #     'cow', 
-    #     'dog', 
-    #     'horse', 
-    #     'sheep', 
-    #     'aeroplane', 
+    #     'aeroplane',
     #     'bicycle', 
-    #     'boat', 
+    #     'bird', 
+    #     'boat',
+    #     'bottle', 
     #     'bus', 
     #     'car',
-    #     'motorbike',
-    #     'train', 
-    #     'bottle', 
+    #     'cat',
     #     'chair', 
+    #     'cow', 
     #     'dining table', 
+    #     'dog', 
+    #     'horse', 
+    #     'motorbike',
+    #     'person',
     #     'potted plant', 
+    #     'sheep', 
     #     'sofa', 
+    #     'train', 
     #     'tv/monitor',
-    #     'none'
+    #     'unlabeled'
     # ]
+    # first_batch_imgs, first_batch_labels = list(dataloader_train)[0]
+    # first_img = first_batch_imgs[0]
+    # img_shape = first_img.shape
+    # print("IMG SHAPE", img_shape)
 
     # VOC 2012 dataset has 20 classes
     n_class = 22
