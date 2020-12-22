@@ -341,7 +341,7 @@ def train(net,
 
     return net
 
-def evaluate(net, dataloader):
+def evaluate(net, dataloader, classes):
     '''
     Evaluates the network on a dataset
 
@@ -356,6 +356,7 @@ def evaluate(net, dataloader):
     '''
     n_sample = 0
 
+    cumulative_images = torch.tensor([])
     cumulative_predictions = torch.tensor([])
     cumulative_ground_truths = torch.tensor([])
 
@@ -385,18 +386,30 @@ def evaluate(net, dataloader):
             iou = intersection_over_union(predictions, ground_truths)
             ious += iou
 
+            cumulative_images = torch.cat((cumulative_images, images), 0)
             cumulative_predictions = torch.cat((cumulative_predictions, predictions), 0)
             cumulative_ground_truths = torch.cat((cumulative_ground_truths, ground_truths), 0)
 
     # TODO: Compute mean evaluation metric(s)
     # IOU = intersection_over_union(cumulative_predictions, cumulative_ground_truths)
     # TODO: Print scores
-    avg_iou = ious / float(len(dataloader))
-    print(f'Jaccard Index over {n_sample} images: {avg_iou}%')
+    avg_iou = ious / float(len(dataloader)) 
+    print(f'Jaccard Index over {n_sample} images: {avg_iou * 100.0}%')
 
+    # TODO: Convert the last batch of images back to original shape
+    cumulative_images = cumulative_images.view(cumulative_images.shape[0], cumulative_images.shape[1], cumulative_images.shape[2], cumulative_images.shape[3])
+    cumulative_images = cumulative_images.cpu().numpy()
+    cumulative_images = np.transpose(cumulative_images, (0, 2, 3, 1))
+
+    # TODO: Convert the last batch of predictions to the original image shape
+    # stacking 3 predictions together along the 1 axis to then convert image back to original image shape
+    cumulative_predictions = torch.stack((cumulative_predictions, cumulative_predictions, cumulative_predictions), dim=1) 
+    cumulative_predictions = cumulative_predictions.view(cumulative_predictions.shape[0], cumulative_predictions.shape[1], cumulative_predictions.shape[2], cumulative_predictions.shape[3])
+    cumulative_predictions = cumulative_predictions.cpu().numpy()
+    cumulative_predictions = np.transpose(cumulative_predictions, (0, 2, 3, 1))
     # TODO: Plot images
-    # plot_images(images, predictions, n_row=2, n_col= int(images.shape[0] / 2), fig_title='VOC 2012 Classification Results')  
-    # plt.show()
+    plot_images(cumulative_images, cumulative_predictions, n_row=1, n_col=1, fig_title='VOC 2012 Classification Results', classes=classes)  
+    plt.show()
 
 def intersection_over_union(prediction, ground_truth):
     '''
@@ -438,7 +451,7 @@ def intersection_over_union(prediction, ground_truth):
     # print('IOU: ', avg_iou)
     # return avg_iou  
 
-def plot_images(X, Y, n_row, n_col, fig_title):
+def plot_images(X, Y, n_row, n_col, fig_title, classes):
     '''
     Creates n_row by n_col panel of images
 
@@ -456,11 +469,65 @@ def plot_images(X, Y, n_row, n_col, fig_title):
 
         Please add any necessary arguments
     '''
+    import matplotlib.patches as mpatches
 
     fig = plt.figure()
     fig.suptitle(fig_title)
 
+    color_dict = {
+        '0' : [0/255, 0/255, 0/255],
+        '1' : [255/255, 0/255, 0/255],
+        '2' : [0/255, 255/255, 0/255],
+        '3' : [0/255, 0/255, 255/255],
+        '4' : [255/255, 255/255, 0/255],
+        '5' : [0/255, 255/255, 255/255],
+        '6' : [255/255, 0/255, 255/255],
+        '7' : [255/255, 69/255, 90/255],
+        '8' : [128/255, 0/255, 128/255],
+        '9' : [0/255, 100/255, 0/255],
+        '10' : [0/255, 0/255, 128/255],
+        '11' : [0/255, 128/255, 128/255],
+        '12' : [128/255, 128/255, 128/255],
+        '13' : [128/255, 0/255, 0/255],
+        '14' : [255/255, 20/255, 147/255],
+        '15' : [139/255, 69/255, 19/255],
+        '16' : [218/255, 165/255, 32/255],
+        '17' : [123/255, 104/255, 238/255],
+        '18' : [250/255, 128/255, 114/255],
+        '19' : [221/255, 160/255, 221/255],
+        '20' : [127/255, 255/255, 212/255],
+        '21' : [255/255, 255/255, 255/255],
+    }
+
     # TODO: Visualize your input images and predictions
+    for i in range(1, n_row * n_col + 1):
+
+        ax = fig.add_subplot(n_row, n_col, i)
+        index = i - 1
+
+        x_i = X[i, ...]
+        y_i = Y[i, ...]  
+        for i, h in enumerate(y_i):
+            for j, w in enumerate(h):
+                y_i[i][j] = color_dict[str(int(y_i[i][j][0]))]
+        
+        visual = np.concatenate((x_i, y_i), axis=1)
+
+        if len(visual.shape) == 1:
+            visual = np.expand_dims(visual, axis=0)
+            
+        ax.imshow(visual)
+ 
+        plt.box(False)
+        plt.axis('off')
+
+    # adding legend
+    handles = []
+    for i in range(len(classes)):
+        handles.append(mpatches.Patch(color=color_dict[str(i)], label=classes[i]))
+
+    plt.legend(handles=handles, title='Legend', bbox_to_anchor=(0., 1.02, 1., .102), loc='lower left', ncol=4)
+    plt.tight_layout()
 
 
 if __name__ == '__main__':
@@ -507,37 +574,37 @@ if __name__ == '__main__':
         shuffle=False,
         num_workers=2)
 
-    # # Define the possible classes in VOC 2012 dataset
-    # classes = [
-    #     'background',
-    #     'aeroplane',
-    #     'bicycle', 
-    #     'bird', 
-    #     'boat',
-    #     'bottle', 
-    #     'bus', 
-    #     'car',
-    #     'cat',
-    #     'chair', 
-    #     'cow', 
-    #     'dining table', 
-    #     'dog', 
-    #     'horse', 
-    #     'motorbike',
-    #     'person',
-    #     'potted plant', 
-    #     'sheep', 
-    #     'sofa', 
-    #     'train', 
-    #     'tv/monitor',
-    #     'unlabeled'
-    # ]
+    # Define the possible classes in VOC 2012 dataset
+    classes = [
+        'background',
+        'aeroplane',
+        'bicycle', 
+        'bird', 
+        'boat',
+        'bottle', 
+        'bus', 
+        'car',
+        'cat',
+        'chair', 
+        'cow', 
+        'dining table', 
+        'dog', 
+        'horse', 
+        'motorbike',
+        'person',
+        'potted plant', 
+        'sheep', 
+        'sofa', 
+        'train', 
+        'tv/monitor',
+        'unlabeled'
+    ]
     # first_batch_imgs, first_batch_labels = list(dataloader_train)[0]
     # first_img = first_batch_imgs[0]
     # img_shape = first_img.shape
     # print("IMG SHAPE", img_shape)
 
-    # VOC 2012 dataset has 20 classes
+    # VOC 2012 dataset has 22 classes
     n_class = 22
 
     # TODO: Define network
@@ -580,4 +647,5 @@ if __name__ == '__main__':
     # TODO: Evaluate network on testing set
     evaluate(
         net=net,
-        dataloader=dataloader_test)
+        dataloader=dataloader_test,
+        classes=classes)
