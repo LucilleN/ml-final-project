@@ -259,7 +259,7 @@ def train(net,
 
             # TODO: Forward through the network
             outputs = net(images)
-            outputs = outputs.view(outputs.shape[0], outputs.shape[1], -1)
+            # outputs = outputs.view(outputs.shape[0], outputs.shape[1], -1)
             # outputs = outputs.detach().numpy()
             # outputs = torch.tensor(np.transpose(outputs, (0, 2, 1)))
 
@@ -277,7 +277,7 @@ def train(net,
 
             # TODO: Compute loss function
 
-            labels = labels.view(labels.shape[0], labels.shape[1], -1)
+            # labels = labels.view(labels.shape[0], labels.shape[1], -1)
             labels = torch.squeeze(labels, dim=1)
             labels = torch.round(labels * 255)
             labels[labels==255] = 21
