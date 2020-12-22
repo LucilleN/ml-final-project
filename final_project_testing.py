@@ -266,26 +266,7 @@ def train(net,
 
             outputs = torch.nn.functional.interpolate(outputs, (shape[0], shape[1]))
 
-            # print("outputs[0] (a single sample of this batch) is")
-            # print(outputs[0].shape)
-            # print(outputs[0])
-            first_prediction = outputs[0]
-            first_groundtruth = labels[0][0]
-            # print("unique labels in groundtruth", torch.unique(first_groundtruth))
-            first_image = images[0][0]
-            
-            # outputs = outputs.view(outputs.shape[0], outputs.shape[1], -1)
-            # outputs = outputs.detach().numpy()
-            # outputs = torch.tensor(np.transpose(outputs, (0, 2, 1)))
 
-            # outputs = outputs.detach().numpy()
-            # outputs = torch.tensor(np.transpose(outputs, (0, 2, 3, 1)))
-            # print("outputs shape:", outputs.shape)
-            # print("outputs unique values are between: ", torch.min(outputs).item(), torch.max(outputs).item())
-            # print("outputs[0] (a single sample of this batch) is")
-            # print(outputs[0])
-            # print("outputs[0][5] is (probabilities for each pixel that it's class 6)")
-            # print(outputs[0][5])
 
             # TODO: Clear gradients so we don't accumlate them from previous batches
             optimizer.zero_grad()
@@ -305,6 +286,10 @@ def train(net,
 
             # if batch > 10:
 
+            #     first_prediction = outputs[0]
+            #     first_groundtruth = labels[0][0]
+            #     first_image = images[0][0]
+
             #     pred_fig = plt.figure()
             #     for label in range(len(first_prediction)):
             #         score_map = first_prediction[label, ...]
@@ -323,9 +308,6 @@ def train(net,
             #     plt.show()
             #     break
 
-
-
-            # print("LOSS", loss)
             
             # TODO: Update parameters by backpropagation
             loss.backward()
@@ -366,15 +348,12 @@ def evaluate(net, dataloader, classes):
     with torch.no_grad():
 
         for batch, (images, labels) in enumerate(dataloader):
-            # print("unique labels:", torch.unique(labels))
+
             # TODO: Forward through the network
             outputs = net(images)
-            # print("eval > outputs shape", outputs.shape)
             # TODO: Take the argmax over the outputs
             _, predictions = torch.max(outputs, dim=1)
-            # print("eval > predictions shape", predictions.shape)
-            # print("eval > unique predictions")
-            # print(torch.unique(predictions))
+
             # TODO: Reshape labels from (N, , W, C) to (N, H, W)
             ground_truths = torch.squeeze(labels, dim=1)
             ground_truths = torch.round(ground_truths * 255)
@@ -391,9 +370,9 @@ def evaluate(net, dataloader, classes):
             cumulative_ground_truths = torch.cat((cumulative_ground_truths, ground_truths), 0)
 
     # TODO: Compute mean evaluation metric(s)
-    # IOU = intersection_over_union(cumulative_predictions, cumulative_ground_truths)
-    # TODO: Print scores
     avg_iou = ious / float(len(dataloader)) 
+
+    # TODO: Print scores
     print(f'Jaccard Index over {n_sample} images: {avg_iou * 100.0}%')
 
     # TODO: Convert the last batch of images back to original shape
@@ -407,6 +386,7 @@ def evaluate(net, dataloader, classes):
     cumulative_predictions = cumulative_predictions.view(cumulative_predictions.shape[0], cumulative_predictions.shape[1], cumulative_predictions.shape[2], cumulative_predictions.shape[3])
     cumulative_predictions = cumulative_predictions.cpu().numpy()
     cumulative_predictions = np.transpose(cumulative_predictions, (0, 2, 3, 1))
+    
     # TODO: Plot images
     plot_images(cumulative_images, cumulative_predictions, n_row=1, n_col=1, fig_title='VOC 2012 Classification Results', classes=classes)  
     plt.show()
@@ -431,25 +411,6 @@ def intersection_over_union(prediction, ground_truth):
     union = 2 * torch.prod(torch.tensor(prediction.shape)) - intersection
     return float(intersection) / float(union)
 
-
-    # labels = torch.unique(ground_truth)
-    # print("unique labels:")
-    # print(labels)
-    # print("unique predictions:")
-    # print(torch.unique(prediction))
-    # ious = 0.0
-    # for label in labels:
-    #     print("calculating iou for label", label)
-    #     intersection = torch.sum((prediction==ground_truth) * (ground_truth==label))
-    #     union = torch.sum((prediction==label) + (ground_truth==label))
-    #     iou = float(intersection / union)
-    #     print("intersection:", intersection, "union:", union, "single iou:", iou)
-    #     ious += iou
-    # # J(A,B) = |A && B| / |A U B| == |A && B| / (|A|+|B| - |A&&B|)
-    # avg_iou = float(ious / len(labels))
-
-    # print('IOU: ', avg_iou)
-    # return avg_iou  
 
 def plot_images(X, Y, n_row, n_col, fig_title, classes):
     '''
@@ -535,9 +496,13 @@ if __name__ == '__main__':
 
     # TODO: Set up data preprocessing step
     # https://pytorch.org/docs/stable/torchvision/transforms.html
-    data_preprocess_transform = torchvision.transforms.Compose([
+    data_preprocess_transform_train = torchvision.transforms.Compose([
         # image size should be divisble by 2^(number of max pools)
         # torchvision.transforms.Resize((IMG_SIZE,IMG_SIZE)),
+        torchvision.transforms.CenterCrop((IMG_SIZE,IMG_SIZE)),
+        torchvision.transforms.ToTensor()
+    ])
+    data_preprocess_transform_test = torchvision.transforms.Compose([
         torchvision.transforms.CenterCrop((IMG_SIZE,IMG_SIZE)),
         torchvision.transforms.ToTensor()
     ])
@@ -548,8 +513,8 @@ if __name__ == '__main__':
         year= '2012',
         image_set= 'train',
         download=True,
-        transform=data_preprocess_transform,
-        target_transform=data_preprocess_transform)
+        transform=data_preprocess_transform_train,
+        target_transform=data_preprocess_transform_train)
 
     # Setup a dataloader (iterator) to fetch from the training set
     dataloader_train = torch.utils.data.DataLoader(
@@ -564,13 +529,13 @@ if __name__ == '__main__':
         year= '2012',
         image_set= 'val',
         download=True,
-        transform=data_preprocess_transform,
-        target_transform=data_preprocess_transform)
+        transform=data_preprocess_transform_test,
+        target_transform=data_preprocess_transform_test)
 
     # TODO: Setup a dataloader (iterator) to fetch from the validation/testing set
     dataloader_test = torch.utils.data.DataLoader(
         dataset_test,
-        batch_size=args.batch_size,
+        batch_size=1,
         shuffle=False,
         num_workers=2)
 
@@ -599,10 +564,6 @@ if __name__ == '__main__':
         'tv/monitor',
         'unlabeled'
     ]
-    # first_batch_imgs, first_batch_labels = list(dataloader_train)[0]
-    # first_img = first_batch_imgs[0]
-    # img_shape = first_img.shape
-    # print("IMG SHAPE", img_shape)
 
     # VOC 2012 dataset has 22 classes
     n_class = 22
