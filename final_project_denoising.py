@@ -49,7 +49,12 @@ class FullyConvolutionalNetwork(nn.Module):
     Fully convolutional network
 
     Args:
-        Please add any necessary arguments
+        img_width: int
+            Width of the images to denoise, in pixels
+        img_height: int
+            Height of the images to denoise, in pixels
+        sigma: float
+            Amount of noise to add to images. Use sigma=0.0 for only image reconstruction.
     '''
 
     def __init__(self, img_width, img_height, sigma):
@@ -88,7 +93,7 @@ class FullyConvolutionalNetwork(nn.Module):
                 tensor of n_output
         '''
 
-         h = x
+        h = x
         
         # Convolutional 1
         # h = self.activation_function(self.conv1_1(h))
@@ -144,8 +149,6 @@ def train(net,
         learning_rate_decay_period : int
             period to reduce learning rate based on decay e.g. every 2 epoch
 
-        Please add any necessary arguments
-
     Returns:
         torch.nn.Module : trained network
     '''
@@ -168,6 +171,7 @@ def train(net,
 
         for batch, (clean_images, _) in enumerate(dataloader):
 
+            # Replace randn below with just rand in order to use uniform distribution for noise
             noise = net.sigma * torch.randn(clean_images.shape)
             noisy_images = torch.clamp(clean_images + noise, min=0, max=1)
 
@@ -204,8 +208,6 @@ def evaluate(net, dataloader):
         dataloader : torch.utils.data.DataLoader
             # https://pytorch.org/docs/stable/data.html
             dataloader for training data
-
-        Please add any necessary arguments
     '''
     n_sample = 0
 
@@ -221,6 +223,7 @@ def evaluate(net, dataloader):
 
         for batch, (clean_images, _) in enumerate(dataloader):
 
+            # Replace randn below with just rand in order to use uniform distribution for noise
             noise = net.sigma * torch.randn(clean_images.shape)
             noisy_images = torch.clamp(clean_images + noise, min=0, max=1)
 
@@ -230,12 +233,6 @@ def evaluate(net, dataloader):
             print("outputs unique values:", torch.unique(outputs))
             print("outputs values range from ", torch.min(outputs), torch.max(outputs))
 
-            if batch == 0:
-                fig = plt.figure()
-                ax = fig.add_subplot(1, 1, 1)
-                ax.imshow(np.transpose(outputs[0].detach().numpy(), (0, 2, 3, 1)))
-
-            
             # Accumulate number of samples
             n_sample = n_sample + clean_images.shape[0]
 
@@ -247,8 +244,6 @@ def evaluate(net, dataloader):
 
             cumulative_noisy_images = torch.cat((cumulative_noisy_images, noisy_images), 0)
             cumulative_denoised_images = torch.cat((cumulative_denoised_images, outputs), 0)
-            # I think we probably don't need this last one
-            # cumulative_clean_images = torch.cat((cumulative_clean_images, clean_images), 0)
 
     # TODO: Compute mean evaluation metric(s)
     avg_mse = mses / float(len(dataloader)) 
@@ -297,6 +292,7 @@ def peak_signal_to_noise_ratio(prediction, ground_truth):
 
     return PSNR
 
+
 def mean_squared_error(prediction, ground_truth):
     '''
     Computes the mean squared error (MSE) between prediction and ground truth
@@ -315,6 +311,7 @@ def mean_squared_error(prediction, ground_truth):
     MSE = torch.mean((prediction - ground_truth) ** 2)
 
     return MSE
+
 
 def plot_images(X, Y, n_row, n_col, fig_title):
     '''
@@ -357,6 +354,7 @@ def plot_images(X, Y, n_row, n_col, fig_title):
  
         plt.box(False)
         plt.axis('off')
+
 
 if __name__ == '__main__':
 
@@ -411,7 +409,7 @@ if __name__ == '__main__':
     net = FullyConvolutionalNetwork(
         img_width=IMG_HEIGHT,
         img_height=IMG_WIDTH,
-        sigma=0.0)
+        sigma=0.3)
 
     # TODO: Setup learning rate optimizer
     # https://pytorch.org/docs/stable/optim.html?#torch.optim.SGD
