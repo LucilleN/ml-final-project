@@ -5,7 +5,7 @@ Names (Please write names in <Last Name, First Name> format):
 3. Arteaga, Andrew 
 
 Project type:
-    Denoising with VOC 2012 Dataset
+    Image Denoising with VOC 2012 Dataset
 
 Report what each member did in this project:
     Lucille: Network Architecture, Training, and Evaluation
@@ -229,9 +229,6 @@ def evaluate(net, dataloader):
 
             # TODO: Forward through the network
             outputs = net(noisy_images)
-            print("outputs shape:", outputs.shape)
-            print("outputs unique values:", torch.unique(outputs))
-            print("outputs values range from ", torch.min(outputs), torch.max(outputs))
 
             # Accumulate number of samples
             n_sample = n_sample + clean_images.shape[0]
@@ -253,12 +250,11 @@ def evaluate(net, dataloader):
     print(f'MSE score over {n_sample} images: {avg_mse}')
     print(f'PSNR over {n_sample} images: {avg_psnr}')
 
+    # Reshape images from (N x C x H x W) to (N x H x W x C) for imshow
     cumulative_noisy_images = cumulative_noisy_images.cpu().numpy()
     cumulative_noisy_images = np.transpose(cumulative_noisy_images, (0, 2, 3, 1))
-    print("cumulative_noisy_images shape ", cumulative_noisy_images.shape)
     cumulative_denoised_images = cumulative_denoised_images.cpu().numpy()
     cumulative_denoised_images = np.transpose(cumulative_denoised_images, (0, 2, 3, 1))
-    print("cumulative_denoised_images shape ", cumulative_denoised_images.shape)
     
     # TODO: Plot images
     plot_images(cumulative_noisy_images, cumulative_denoised_images, n_row=2, n_col=1, fig_title='VOC 2012 Image Denoising Results')  
