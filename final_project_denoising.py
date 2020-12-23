@@ -283,7 +283,7 @@ def peak_signal_to_noise_ratio(prediction, ground_truth):
 
     MSE = mean_squared_error(prediction, ground_truth)
 
-    # PSNR = 20 * log_10 (MAX_INTENSITY) - 10 * log_10 (MSE)
+    # PSNR Equation: PSNR = 20 * log_10 (MAX_INTENSITY) - 10 * log_10 (MSE) 
     PSNR = 20 * math.log10(MAX_INTENSITY) - 10 * math.log10(MSE)
 
     return PSNR
