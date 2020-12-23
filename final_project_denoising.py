@@ -11,6 +11,7 @@ TODO: Report what each member did in this project
 
 '''
 import argparse
+import math
 import torch, torchvision
 import torch.nn as nn
 import numpy as np
@@ -259,11 +260,8 @@ def train(net,
             noise = sigma * torch.randn(clean_images.shape)
             noisy_images = torch.clamp(clean_images + noise, min=0, max=1)
 
-            # print("images values are between", torch.min(clean_images), torch.max(clean_images))
-
             # TODO: Forward through the network
             outputs = net(noisy_images)
-
 
             # TODO: Clear gradients so we don't accumlate them from previous batches
             optimizer.zero_grad()
@@ -304,7 +302,6 @@ def evaluate(net, dataloader):
     cumulative_denoised_images = torch.tensor([])
     cumulative_clean_images = torch.tensor([])
 
-    # ious = 0
     mses = 0.0
     psnrs = 0.0 
 
@@ -324,6 +321,7 @@ def evaluate(net, dataloader):
             # Accumulate number of samples
             n_sample = n_sample + clean_images.shape[0]
 
+            # Accumulate MSE and PSNR metrics for the current batch
             mse = mean_squared_error(outputs, clean_images)
             mses += mse
             psnr = peak_signal_to_noise_ratio(outputs, clean_images)
@@ -340,16 +338,14 @@ def evaluate(net, dataloader):
 
     # TODO: Print scores
     print(f'MSE score over {n_sample} images: {avg_mse * 100.0}%')
-    print(f'PSNR over {n_sample} images: {avg_psnr * 100.0}%')
+    print(f'PSNR over {n_sample} images: {avg_psnr}')
 
     cumulative_noisy_images = cumulative_noisy_images.cpu().numpy()
     cumulative_noisy_images = np.transpose(cumulative_noisy_images, (0, 2, 3, 1))
-    print("cumulative_noisy_images shape ", cumulative_noisy_images.shape())
+    print("cumulative_noisy_images shape ", cumulative_noisy_images.shape)
     cumulative_denoised_images = cumulative_denoised_images.cpu().numpy()
     cumulative_denoised_images = np.transpose(cumulative_denoised_images, (0, 2, 3, 1))
-    print("cumulative_denoised_images shape ", cumulative_denoised_images.shape())
-    # bless u
-    # u too
+    print("cumulative_denoised_images shape ", cumulative_denoised_images.shape)
     
     # TODO: Plot images
     plot_images(cumulative_noisy_images, cumulative_denoised_images, n_row=2, n_col=1, fig_title='VOC 2012 Image Denoising Results')  
@@ -379,7 +375,7 @@ def peak_signal_to_noise_ratio(prediction, ground_truth):
     MSE = mean_squared_error(prediction, ground_truth)
 
     # PSNR = 20 * log_10 (MAX_INTENSITY) - 10 * log_10 (MSE)
-    PSNR = 20 * torch.log10(MAX_INTENSITY) - 10 * torch.log10(MSE)
+    PSNR = 20 * math.log10(MAX_INTENSITY) - 10 * math.log10(MSE)
 
     return PSNR
 
@@ -398,7 +394,6 @@ def mean_squared_error(prediction, ground_truth):
     '''
 
     # TODO: Computes mean squared error
-    # Implement ONLY if you are working on image reconstruction or denoising
     MSE = torch.mean((prediction - ground_truth) ** 2)
 
     return MSE
