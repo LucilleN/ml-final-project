@@ -12,6 +12,10 @@ Report what each member did in this project:
     Andrew: Image visualizations, Data Plotting, and Evaluation 
     Louis: Network Architecture and Tuning
 
+See njoo_lucille_report.pdf (turned in with rest of submission) for writeup.
+
+To train the network with the hyperparameters in our report, run:
+    python3 njoo_lucille_final_project.py --train_network --batch_size 4 --n_epoch 10 --learning_rate 1e-3 --learning_rate_decay 0.8 --learning_rate_decay_period 3 --momentum 0.9
 '''
 import argparse
 import math
