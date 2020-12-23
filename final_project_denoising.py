@@ -4,10 +4,13 @@ Names (Please write names in <Last Name, First Name> format):
 2. Kane, Louis
 3. Arteaga, Andrew 
 
-TODO: Project type
-Denoising with VOC 2012 Dataset
+Project type:
+    Denoising with VOC 2012 Dataset
 
-TODO: Report what each member did in this project
+Report what each member did in this project:
+    Lucille: Network Architecture, Training, and Evaluation
+    Andrew: Image visualizations, Data Plotting, and Evaluation 
+    Louis: Network Architecture and Tuning
 
 '''
 import argparse
@@ -51,90 +54,28 @@ class FullyConvolutionalNetwork(nn.Module):
 
     def __init__(self, img_width, img_height, sigma):
         super(FullyConvolutionalNetwork, self).__init__()
-
-        # TODO: Design your neural network using
-        # (1) convolutional layers
-        # https://pytorch.org/docs/stable/generated/torch.nn.Conv2d.html
-
-        # (2) max pool layers
-        # https://pytorch.org/docs/stable/nn.functional.html#torch.nn.functional.max_pool2d
-
-        # (3) average pool layers
-        # https://pytorch.org/docs/stable/nn.functional.html#torch.nn.functional.avg_pool2d
-
-        # (4) transposed convolutional layers
-        # https://pytorch.org/docs/stable/generated/torch.nn.ConvTranspose2d.html
-        
-        self.activation_function = torch.nn.ReLU(inplace=True)
-        # self.activation_function = torch.nn.Tanh()
+        self.activation_function = torch.nn.Tanh()
         self.img_width = img_width
         self.img_height = img_height
         self.kernel_size = 3
         self.stride = 2
         self.sigma = sigma
 
-        """
-        Encoding
-        """
-
         # Convolutional 1
-        self.conv1_1 = nn.Conv2d(in_channels=3, out_channels=8, kernel_size=self.kernel_size, padding=1)
-        self.conv1_2 = nn.Conv2d(in_channels=8, out_channels=8, kernel_size=self.kernel_size, padding=1)
+        self.conv1_2 = nn.Conv2d(in_channels=3, out_channels=8, kernel_size=self.kernel_size, padding=1)
         
         # Pooling 1
         self.pool1 = torch.nn.MaxPool2d(kernel_size=self.kernel_size, stride=self.stride)  
 
         # Convolutional 2
-        self.conv2_1 = torch.nn.Conv2d(in_channels=8, out_channels=16, kernel_size=self.kernel_size, padding=1)
-        self.conv2_2 = torch.nn.Conv2d(in_channels=16, out_channels=16, kernel_size=self.kernel_size, padding=1)
+        self.conv2_2 = torch.nn.Conv2d(in_channels=8, out_channels=16, kernel_size=self.kernel_size, padding=1)
         
-        # Pooling 2
-        self.pool2 = torch.nn.AvgPool2d(kernel_size=self.kernel_size, stride=self.stride) 
-
-        # Convolutional 3
-        self.conv3_1 = torch.nn.Conv2d(in_channels=16, out_channels=32, kernel_size=self.kernel_size, padding=1)
-        self.conv3_2 = torch.nn.Conv2d(in_channels=32, out_channels=32, kernel_size=self.kernel_size, padding=1)
-        
-        # Pooling 3
-        self.pool3 = torch.nn.MaxPool2d(kernel_size=self.kernel_size, stride=self.stride) 
-
-        """
-        Latent Vector
-        """
-
-        # Convolutional 4
-        self.conv4_1 = torch.nn.Conv2d(in_channels=32, out_channels=64, kernel_size=self.kernel_size, padding=1)
-        self.conv4_2 = torch.nn.Conv2d(in_channels=64, out_channels=64, kernel_size=self.kernel_size, padding=1)
-
-        """
-        Decoding
-        """
-
-        # Upsampling / Transpose Convolutional 1
-        self.transposed_conv1 = torch.nn.ConvTranspose2d(in_channels=64, out_channels=64, kernel_size=self.kernel_size, stride=self.stride)
-
-        # Convolutional 5
-        self.conv5_1 = torch.nn.Conv2d(in_channels=64, out_channels=32, kernel_size=self.kernel_size, padding=1)
-        self.conv5_2 = torch.nn.Conv2d(in_channels=32, out_channels=32, kernel_size=self.kernel_size, padding=1)
-        
-        # Upsampling / Transpose Convolutional 2
-        self.transposed_conv2 = torch.nn.ConvTranspose2d(in_channels=32, out_channels=32, kernel_size=self.kernel_size, stride=self.stride)
-
-        # Convolutional 6
-        self.conv6_1 = torch.nn.Conv2d(in_channels=32, out_channels=16, kernel_size=self.kernel_size, padding=1)
-        self.conv6_2 = torch.nn.Conv2d(in_channels=16, out_channels=16, kernel_size=self.kernel_size, padding=1)
-        
-        # Upsampling / Transpose Convolutional 3
+        # Upsampling / Transpose 
         self.transposed_conv3 = torch.nn.ConvTranspose2d(in_channels=16, out_channels=16, kernel_size=self.kernel_size, stride=self.stride)
 
-        # Convolutional 7
-        self.conv7_1 = torch.nn.Conv2d(in_channels=16, out_channels=8, kernel_size=self.kernel_size, padding=1)
-        self.conv7_2 = torch.nn.Conv2d(in_channels=8, out_channels=3, kernel_size=self.kernel_size, padding=1)
+        # Convolutional 3
+        self.conv3_2 = torch.nn.Conv2d(in_channels=24, out_channels=3, kernel_size=self.kernel_size, padding=1)
 
-        """
-        Fixing the one-pixel mismatch with an upsampling layer
-        """
-        self.upsample = torch.nn.Upsample((self.img_height, self.img_width), mode='bilinear')
 
     def forward(self, x):
         '''
@@ -147,59 +88,30 @@ class FullyConvolutionalNetwork(nn.Module):
                 tensor of n_output
         '''
 
-        h = x
+         h = x
         
-        """
-        Encoding
-        """
-
         # Convolutional 1
-        h = self.activation_function(self.conv1_1(h))
+        # h = self.activation_function(self.conv1_1(h))
         h = self.activation_function(self.conv1_2(h))
+        first_output = torch.nn.functional.interpolate(h, size=(255, 255), mode='bilinear')
+        
         # Pooling 1
         h = self.pool1(h)
 
         # Convolutional 2
-        h = self.activation_function(self.conv2_1(h))
+        # h = self.activation_function(self.conv2_1(h))
         h = self.activation_function(self.conv2_2(h))
-        # Pooling 2
-        h = self.pool2(h)
 
-        # Convolutional 3
-        h = self.activation_function(self.conv3_1(h))
-        h = self.activation_function(self.conv3_2(h))
-        # Pooling 3
-        h = self.pool3(h)
-
-        """
-        Latent Vector
-        """
-
-        # Convolutional 4
-        h = self.activation_function(self.conv4_1(h))
-        h = self.activation_function(self.conv4_2(h))
-
-        """
-        Decoding
-        """
-
-        # Upsampling / Transpose Convolutional 1
-        h = self.activation_function(self.transposed_conv1(h))
-        # Convolutional 5
-        h = self.activation_function(self.conv5_1(h))
-        h = self.activation_function(self.conv5_2(h))
-
-        # Upsampling / Transpose Convolutional 2
-        h = self.activation_function(self.transposed_conv2(h))
-        # Convolutional 6
-        h = self.activation_function(self.conv6_1(h))
-        h = self.activation_function(self.conv6_2(h))
-
-        # Upsampling / Transpose Convolutional 3
+        # Upsampling / Transpose
         h = self.activation_function(self.transposed_conv3(h))
-        # Convolutional 7
-        h = self.activation_function(self.conv7_1(h))
-        h = nn.functional.sigmoid(self.conv7_2(h))
+        # transpose_output = torch.nn.functional.interpolate(h, size=(self.img_height, self.img_width), mode='bilinear')
+        transpose_output = h
+        new_output = torch.cat((first_output, transpose_output), dim=1)
+        
+        # Convolutional 3
+        # h = self.activation_function(self.conv3_1(h))
+        h = nn.functional.sigmoid(self.conv3_2(new_output))
+        # h = nn.functional.sigmoid(self.conv3_2(h))
 
         # h = self.upsample(h)
         h = torch.nn.functional.interpolate(h, size=(self.img_height, self.img_width), mode='bilinear')
