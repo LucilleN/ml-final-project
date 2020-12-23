@@ -281,8 +281,10 @@ def train(net,
 
             # labels = labels.view(labels.shape[0], labels.shape[1], -1)
             labels = torch.squeeze(labels, dim=1)
-            labels = torch.round(labels * 255)
-            labels[labels==255] = 21
+            print("labels unique values")
+            print(torch.unique(labels))
+            # labels = torch.round(labels * 255)
+            # labels[labels==255] = 21
             labels = labels.long()
             # print("labels shape:", labels.shape)
             # print("labels unique values are between: ", torch.min(labels).item(), torch.max(labels).item())
@@ -521,10 +523,10 @@ if __name__ == '__main__':
     ])
 
     # Download and setup your training set
-    dataset_train = torchvision.datasets.VOCSegmentation(
+    dataset_train = torchvision.datasets.Cityscapes(
         root='./gtFine_trainvaltest',
-        image_set= 'train',
-        download=True,
+        split= 'train',
+        mode='fine',
         transform=data_preprocess_transform_train,
         target_transform=data_preprocess_transform_train)
 
@@ -536,10 +538,10 @@ if __name__ == '__main__':
         num_workers=2)
 
     # Download and setup your validation/testing set
-    dataset_test = torchvision.datasets.VOCSegmentation(
-        root='./gtFine_trainvaltest',
-        image_set= 'val',
-        download=True,
+    dataset_test = torchvision.datasets.Cityscapes(
+        root='./gtFine_trainvaltest/gtFine/val',
+        split= 'val',
+        mode='fine',
         transform=data_preprocess_transform_test,
         target_transform=data_preprocess_transform_test)
 
